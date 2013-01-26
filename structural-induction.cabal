@@ -41,3 +41,20 @@ library
     safe,
     pretty
 
+test-suite walk
+  type:           exitcode-stdio-1.0
+  main-is:        Runner.hs
+  hs-source-dirs: test
+  ghc-options:    -Wall -threaded
+  -- how to run program with several threads?
+  if flag(Werror)
+    ghc-options: -Werror
+
+  build-depends:
+    structural-induction,
+    base,
+    pretty,
+    QuickCheck,
+    mtl,
+    parallel
+

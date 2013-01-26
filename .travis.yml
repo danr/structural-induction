@@ -5,5 +5,5 @@ install:
     - cabal install -fWerror --enable-tests
 
 script:
-    - cabal test && hlint Induction
+    - cabal test && hlint Induction && hlint test
 

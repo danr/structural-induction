@@ -7,6 +7,7 @@
 module Induction.Structural
     ( Term(..)   , TermV
     , Hypothesis , HypothesisV
+    , Predicate
     , IndPart(..), IndPartV
     , (:::)
     , Arg(..)

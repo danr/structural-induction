@@ -1,4 +1,4 @@
-module Test where
+module Example where
 
 import Text.PrettyPrint (render)
 
