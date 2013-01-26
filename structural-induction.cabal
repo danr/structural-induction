@@ -1,0 +1,43 @@
+name:               structural-induction
+category:           Theorem Provers, Logic
+version:            0.1
+license:            LGPL-3
+license-file:       LICENSE
+author:             Dan Rosén
+maintainer:         Dan Rosén <danr@chalmers.se>
+homepage:           http://www.github.com/danr/structural-induction
+bug-reports:        http://www.github.com/danr/structural-induction/issues
+build-type:         Simple
+cabal-version:      >= 1.8
+tested-with:        GHC == 7.4.1, GHC == 7.6.1
+synopsis:           Instantiates structural induction schemas for algebraic data types
+
+source-repository head
+    type: git
+    location: git://github.com/danr/structural-induction.git
+
+flag Werror
+  default: False
+  manual: True
+
+library
+  ghc-options:    -Wall
+  if flag(Werror)
+    ghc-options: -Werror
+
+  exposed-modules:
+    Induction.Structural,
+    Induction.Structural.Terms,
+    Induction.Structural.Linearise
+
+  other-modules:
+    Induction.Structural.Util
+
+  build-depends:
+    base,
+    mtl,
+    containers,
+    geniplate >= 0.6,
+    safe,
+    pretty
+

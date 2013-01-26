@@ -1,0 +1,9 @@
+language: haskell
+
+install:
+    - sudo apt-get -q -y install hlint
+    - cabal install -fWerror --enable-tests
+
+script:
+    - cabal test && hlint Induction
+
