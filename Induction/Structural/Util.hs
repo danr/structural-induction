@@ -1,3 +1,4 @@
+-- TODO: Write tests, for instance using haskell-doctest
 module Induction.Structural.Util where
 
 import Control.Monad (liftM)
