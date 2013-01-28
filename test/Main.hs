@@ -7,6 +7,8 @@ import System.Exit (exitFailure)
 
 import Test.QuickCheck
 import Test.QuickCheck.Test
+import Test.Feat.Access
+import Test.Feat.Modifiers (nat)
 
 import Language.Haskell.Extract
 
@@ -32,21 +34,6 @@ ind sii (TestCase types coords) =
 
 data TestCase = TestCase [Ty'] [Int]
   deriving Show
-
-instance Arbitrary TestCase where
-    arbitrary = sized $ \ s -> do
-        x <- choose (0,2)
-        let n = s `div` 30 + x
-            m = if n == 0 then 0 else s `div` 30 + x
-        tys <- vectorOf n arbitrary
-        coords <- vectorOf m (choose (0,n-1))
-        return $ TestCase tys coords
-
-    shrink (TestCase tys coords) =
-        [ TestCase t (if null t then [] else map (min (length t - 1)) c)
-        | t <- shrink tys
-        , c <- shrink coords
-        ]
 
 unitTc :: Int -> [Int] -> TestCase
 unitTc n = TestCase (replicate n (Si Unit))
@@ -83,11 +70,6 @@ prop_bools sii (NonNegative x) xs
   where x' = min 10 x
 
 -- | Linear
-prop_nat :: SII -> NonNegative Int -> Property
-prop_nat sii (NonNegative x) = mkProp sii (natTc x')
-  where x' = min 5000 x
-
--- | Linear, this explodes for lists
 prop_maybe :: SII -> NonNegative Int -> NonNegative Int -> Property
 prop_maybe sii (NonNegative d) (NonNegative i)
     = mkProp sii (maybeTc (Si Unit) d' i')
@@ -95,14 +77,8 @@ prop_maybe sii (NonNegative d) (NonNegative i)
     d' = min 100 d
     i' = min 100 i
 
-prop_natnat :: SII -> Property
-prop_natnat = flip mkProp (TestCase [Si Nat,Si Nat] [0,1])
-
-prop_tupnatnat :: SII -> Property
-prop_tupnatnat = flip mkProp (TestCase [Si (TupTy Nat Nat)] [0,0])
-
-prop_listlist :: SII -> Property
-prop_listlist = flip mkProp (TestCase [Si (List (List TyVar))] [0,0])
+mkPropTy :: SII -> Ty' -> Int -> Property
+mkPropTy sii ty n = mkProp sii (TestCase [ty] (replicate n 0))
 
 mkProp :: SII -> TestCase -> Property
 mkProp sii tc@(TestCase tys _) =
@@ -115,17 +91,36 @@ mkProp sii tc@(TestCase tys _) =
                 Nothing -> property True
   where parts = ind sii tc
 
+tryWithTypes :: SII -> [Ty'] -> [Int] -> Property
+tryWithTypes sii = (mkProp sii .) . TestCase
+
 main :: IO ()
 main = do
     let tests = [("structuralInduction",structuralInduction)]
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
-        putStrLn $ "mkProp " ++ name_sii
-        ok_big <- quickCheckWithResult stdArgs { maxSuccess = 1000 } (mkProp sii)
-        ok_rest <- sequence $(functionExtractorMap "^prop_"
+
+        ok_dbl_feat <- forM [0..100] $ \ ix -> forM [1..12] $ \ d -> do
+            let (i,j) = index ix
+                ty1 = indexWith enumTy' (nat i)
+                ty2 = indexWith enumTy' (nat j)
+                tys = [ty1,ty2]
+                coords = drop (d `mod` 2) $ take (d `div` 2) $ cycle [0,1]
+            putStrLn $ name_sii ++ ": " ++ show tys
+                ++ " coords: " ++ show coords
+            quickCheckResult (tryWithTypes sii tys coords)
+
+        ok_feat <- forM [0..100] $ \ ix -> forM [1..3] $ \ d -> do
+            let ty = indexWith enumTy' ix
+            putStrLn $ name_sii ++ ": " ++ show ty ++ " depth: " ++ show d
+            quickCheckResult (mkPropTy sii ty d)
+
+        ok_manual <- sequence $(functionExtractorMap "^prop_"
             [| \ name_prop prop -> do
-                putStrLn $ name_prop ++ " " ++ name_sii
+                putStrLn $ name_sii ++ ": " ++ name_prop
                 quickCheckResult (prop sii) |])
-        return $ all isSuccess (ok_big:ok_rest)
+
+        return $ all isSuccess (ok_manual ++ concat (ok_feat ++ ok_dbl_feat))
+
     unless (and oks) exitFailure
 

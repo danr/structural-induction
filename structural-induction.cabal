@@ -58,4 +58,5 @@ test-suite walk
     mtl,
     parallel,
     language-haskell-extract
+    testing-feat
 

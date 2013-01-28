@@ -1,12 +1,15 @@
-{-# LANGUAGE GADTs, KindSignatures, FlexibleInstances, ConstraintKinds, PatternGuards #-}
+{-# LANGUAGE GADTs, KindSignatures, DeriveDataTypeable,
+        FlexibleInstances, ConstraintKinds,
+        PatternGuards, TemplateHaskell #-}
 module EnvTypes where
 
 import Nat
 
 import Data.Function (on)
+import Data.Typeable
 
 import Test.QuickCheck
-import Util
+import Test.Feat
 
 type EqShow a = (Eq a,Show a,Arbitrary a)
 
@@ -15,6 +18,11 @@ data Sigma :: (* -> *) -> * where
 
 data Exists :: (* -> *) -> * where
     Val :: EqShow a => r a -> a -> Exists r
+
+type Repr' = Exists Repr
+
+type Ty' = Sigma Repr
+
 
 -- Representations of our types.
 -- Putting Eq and Show here simplifies those instances for Repr a bit
@@ -28,6 +36,31 @@ data Repr a where
     TupTy :: (EqShow a,EqShow b) => Repr a -> Repr b -> Repr (a,b)
     TyVar :: Repr Int
     -- ^ Should this contain more information?
+  deriving Typeable
+
+data URepr
+    = UUnit | UNat | UPInt | UBool
+    | UList URepr | UMaybe URepr
+    | UTupTy URepr URepr
+    | UTyVar
+  deriving Typeable
+
+deriveEnumerable ''URepr
+
+toTy :: URepr -> Ty'
+toTy u = case u of
+    UUnit      -> Si Unit
+    UNat       -> Si Nat
+    UPInt      -> Si PInt
+    UBool      -> Si Bool
+    UList a    | Si a' <- toTy a -> Si (List a')
+    UMaybe a   | Si a' <- toTy a -> Si (Maybe a')
+    UTupTy a b | Si a' <- toTy a
+               , Si b' <- toTy b -> Si (TupTy a' b')
+    UTyVar     -> Si TyVar
+
+enumTy' :: Enumerate Ty'
+enumTy' = fmap toTy enumerate
 
 showRepr :: Repr a -> String
 showRepr r = case r of
@@ -54,31 +87,7 @@ instance Show Ty' where
         TupTy a b -> "(" ++ show (Si a) ++ "," ++ show (Si b) ++ ")"
         TyVar     -> "a"
 
-instance Arbitrary Ty' where
-    arbitrary = halfSize $ \ s -> frequency
-        [ (100,return $ Si Nat)
-        , (20,return $ Si PInt)
-        , (10,return $ Si Bool)
-        , (10,return $ Si TyVar)
-        , (1,return $ Si Unit)
-        , (s * 25,do
-            Si a <- arbitrary
-            return $ Si (List a))
-        , (s * 10,do
-            Si a <- arbitrary
-            return $ Si (Maybe a))
-        , (s * 10,do
-            Si a <- arbitrary
-            Si b <- arbitrary
-            return $ Si (TupTy a b))
-        ]
-
-    shrink (Si (List a))    = Si a:shrink (Si a)
-    shrink (Si (TupTy a b)) = Si a:Si b:(shrink (Si a) ++ shrink (Si b))
-    shrink (Si (Maybe a))   = Si a:shrink (Si a)
-    shrink (Si PInt)        = [Si Nat]
-    shrink (Si Nat)         = [Si Bool]
-    shrink _                = [Si Unit]
+type Con' = Sigma Con
 
 data Con a where
     TT   :: Con ()
@@ -117,12 +126,6 @@ instance Ord Con' where
 
 instance Show Con' where
     show = snd . infoCon'
-
-type Repr' = Exists Repr
-
-type Ty' = Sigma Repr
-
-type Con' = Sigma Con
 
 instance Show (Exists a) where
     show (Val _ x) = show x
