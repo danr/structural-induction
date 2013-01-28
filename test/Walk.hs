@@ -2,6 +2,7 @@
 module Walk where
 
 import Test.QuickCheck
+import Data.List
 import Control.Monad
 import Control.Applicative
 import Control.Parallel.Strategies
@@ -27,18 +28,17 @@ construct1 types vm tm = case tm of
     Con s tms ->  mkCon s <$> mapM (construct1 types vm) tms
     Fun{} -> error "exponentials not supported"
 
-startFromTypes :: [Ty'] -> Gen [Repr']
-startFromTypes = mapM arbFromType'
-
 -- TODO: Can this be reorganized so we get an efficient unrolling?
-makeTracer :: [Exists Repr] -> [IndP] -> Gen (Trace [Exists Repr])
+makeTracer :: [Repr'] -> [IndP] -> Gen (Trace [Repr'])
 makeTracer args parts = go parts
   where
-    go [] = error $ "No case for " ++ show args
     go (IndPart _ hyps conc:is) = case zipWithM match args conc of
         Nothing -> go is
         Just vms -> halfSize $ \ _ -> do
             argss' <- mapM (construct vms) hyps
             forks <- mapM (`makeTracer` parts) argss'
             return (Fork args (forks `using` rpar))
-
+    go [] = error $
+        "makeTracer; No case for " ++ show args ++ "!" ++
+        " Details: (" ++ intercalate " , " (map showRepr' args) ++ ")" ++
+        " Check Env.match and EnvTypes.==?, case is missing from schema"

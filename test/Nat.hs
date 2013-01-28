@@ -23,10 +23,12 @@ instance Num Nat where
     fromInteger n = nats !! fromEnum n
 
 -- Another classic!
-data PInt
-    = P { p :: Nat }
-    | N { p :: Nat }
+data PInt = P Nat | N Nat
   deriving (Show,Eq)
+
+p :: PInt -> Nat
+p (P n) = n
+p (N n) = n
 
 instance Arbitrary PInt where
     arbitrary = do

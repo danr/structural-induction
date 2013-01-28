@@ -43,9 +43,9 @@ library
 
 test-suite walk
   type:           exitcode-stdio-1.0
-  main-is:        Runner.hs
+  main-is:        Main.hs
   hs-source-dirs: test
-  ghc-options:    -Wall -threaded
+  ghc-options:    -Wall -threaded -with-rtsopts=-N
   -- how to run program with several threads?
   if flag(Werror)
     ghc-options: -Werror
@@ -56,5 +56,6 @@ test-suite walk
     pretty,
     QuickCheck,
     mtl,
-    parallel
+    parallel,
+    language-haskell-extract
 

@@ -20,6 +20,7 @@ type Hyp  = Hypothesis Con' String Ty'
 -- | A small test environment. No exponentials for now.
 testEnv :: Repr a -> Maybe [(Con a,[Arg Ty'])]
 testEnv t = case t of
+    Unit      -> Just [(TT,[])]
     Nat       -> Just [(Zero,[])
                       ,(Succ,[Rec (Si Nat)])
                       ]
@@ -48,9 +49,10 @@ testEnv' (Si t) = case testEnv t of
 -- | Generates a random value of some type
 arbFromType :: Repr a -> Gen a
 arbFromType t = case t of
-    Nat -> arbitrary
-    PInt -> arbitrary
-    Bool -> arbitrary
+    Unit   -> arbitrary
+    Nat    -> arbitrary
+    PInt   -> arbitrary
+    Bool   -> arbitrary
     List a -> halfSize $ \ s -> frequency
         [ (1, return [])
         , (s, (:) <$> arbFromType a <*> arbFromType (List a))
@@ -66,9 +68,13 @@ arbFromType t = case t of
 arbFromType' :: Sigma Repr -> Gen (Exists Repr)
 arbFromType' (Si r) = Val r <$> arbFromType r
 
+startFromTypes :: [Ty'] -> Gen [Repr']
+startFromTypes = mapM arbFromType'
+
 -- Cannot make this well typed in a nice way
 mkCon :: Con' -> [Repr'] -> Repr'
 mkCon (Si c) as = case c of
+    TT     -> case as of { []                -> Val Unit ()            ; _ -> ill_typed }
     Zero   -> case as of { []                -> Val Nat Z              ; _ -> ill_typed }
     Succ   -> case as of { [Val Nat n]       -> Val Nat (S n)          ; _ -> ill_typed }
     Pos    -> case as of { [Val Nat n]       -> Val PInt (P n)         ; _ -> ill_typed }
@@ -95,6 +101,7 @@ match :: Repr' -> Tm -> Maybe VarMap
 match v tm0 = case tm0 of
     Var s -> Just [(s,v)]
     Con (Si c) tms -> case (v,c,tms) of
+        (Val Unit ()            , TT     , [])   -> ok
         (Val Nat Z              , Zero   , [])   -> ok
         (Val Nat (S x)          , Succ   , [tm]) -> match (Val Nat x) tm
         (Val PInt (P x)         , Pos    , [tm]) -> match (Val Nat x) tm
