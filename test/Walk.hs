@@ -6,7 +6,6 @@ import Data.List
 import Control.Monad
 import Control.Applicative
 import Control.Parallel.Strategies
-import Control.Exception.Base
 
 import Induction.Structural
 

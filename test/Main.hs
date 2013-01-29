@@ -83,7 +83,7 @@ mkPropTy sii ty n = mkProp sii (TestCase [ty] (replicate n 0))
 mkProp :: SII -> TestCase -> Property
 mkProp sii tc@(TestCase tys _) =
     printTestCase (showIndP parts) $
-    forAllShrink (startFromTypes tys) (sequence . map shrinkRepr') $ \ start ->
+    forAllShrink (startFromTypes tys) (mapM shrinkRepr') $ \ start ->
         forAll (makeTracer start parts) $ \ trace ->
             case loop trace of
                 Just e  ->
