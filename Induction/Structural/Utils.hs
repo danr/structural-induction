@@ -1,6 +1,8 @@
-{-# LANGUAGE ScopedTypeVariables, TypeOperators, PatternGuards #-}
+{-# LANGUAGE ScopedTypeVariables, TypeOperators, PatternGuards, GeneralizedNewtypeDeriving #-}
 module Induction.Structural.Utils
-    ( newFresh
+    ( Fresh
+    , runFresh
+    , newFresh
     , newTyped
     , refreshV
     , refreshTypedV
@@ -41,12 +43,18 @@ tidy = nubSortedOn (first (map fst)) . filter (not . all isAtom . snd)
     isAtom (Con _ tms) = all isAtom tms
     isAtom _           = False
 
+-- Fresh variables
+
+-- | A monad of fresh Integers
+newtype Fresh a = Fresh (State Integer a)
+  deriving (Functor,Applicative,Monad,MonadState Integer)
+
+runFresh :: Fresh a -> a
+runFresh (Fresh m) = evalState m 0
+
 -- | Creating a fresh variable
 newFresh :: v -> Fresh (V v)
-newFresh v = do
-    x <- get
-    modify succ
-    return (v,x)
+newFresh v = Fresh $ state $ \ s -> ((v,s),s+1)
 
 -- | Create a fresh variable that has a type
 newTyped :: v -> t -> Fresh (V v ::: t)

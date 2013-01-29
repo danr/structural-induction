@@ -18,11 +18,9 @@ module Induction.Structural.Types
     , unVM
     , TyEnv
     , V
-    , Fresh
     ) where
 
 import Control.Applicative hiding (empty)
-import Control.Monad.State
 import Control.Monad.Identity
 
 import Induction.Structural.Auxiliary ((.:))
@@ -113,11 +111,6 @@ data Arg t
 
 type TyEnv c t = t -> Maybe [c ::: [Arg t]]
 
--- Fresh variables
-
--- | A monad of fresh Integers
-type Fresh = State Integer
-
 -- | Cheap way of introducing fresh variables
 type V v = (v,Integer)
 
@@ -127,12 +120,6 @@ type TermV c v = Term c (V v)
 type HypothesisV c v t = Hypothesis c (V v) t
 
 -- Removing fresh variables
-
-instanceTransformBi [t| forall c' c v t . ([IndPart c' v t],c) |]
-instanceTransformBi [t| forall c v v' t . (IndPart c v' t,v) |]
-
-unVM' :: (v -> Integer -> v) -> IndPartV c v t -> IndPart c v t
-unVM' f = transformBi (uncurry f)
 
 -- | Flattens out fresh variable names, in a monad
 unVM :: (Applicative m,Monad m)

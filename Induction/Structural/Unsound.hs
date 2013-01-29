@@ -3,7 +3,6 @@ module Induction.Structural.Unsound (structuralInductionUnsound) where
 
 import Control.Arrow hiding ((<+>))
 import Control.Applicative hiding (empty)
-import Control.Monad.State
 
 import Data.List
 import Data.Maybe
@@ -246,7 +245,7 @@ structuralInductionUnsound
     -- ^ The coordinates to do induction on in P, in order
     -> [IndPartV c v t]
     -- ^ The set of clauses to prove
-structuralInductionUnsound ty_env args coordinates = flip evalState 0 $ do
+structuralInductionUnsound ty_env args coordinates = runFresh $ do
 
     args_fresh <- mapM (uncurry newTyped) args
 
