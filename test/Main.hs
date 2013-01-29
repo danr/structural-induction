@@ -82,7 +82,6 @@ mkPropTy sii ty n = mkProp sii (TestCase [ty] (replicate n 0))
 
 mkProp :: SII -> TestCase -> Property
 mkProp sii tc@(TestCase tys _) =
-    printTestCase (showIndP parts) $ const False $
     forAllShrink (startFromTypes tys) (mapM shrinkRepr') $ \ start ->
         forAll (makeTracer start parts) $ \ trace ->
             case loop trace of
@@ -98,13 +97,14 @@ tryWithTypes sii = (mkProp sii .) . TestCase
 main :: IO ()
 main = do
     let tests =
-            [("sillyInduction",sillyInduction)
-            ,("structuralInductionUnsound",structuralInductionUnsound)
+            [("subtermInduction",subtermInduction)
+            ,("sillyInduction",sillyInduction)
+            -- ,("structuralInductionUnsound",structuralInductionUnsound)
             ]
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
-        ok_dbl_feat <- forM [0..100] $ \ ix -> forM [1..12] $ \ d -> do
+        ok_dbl_feat <- forM [0..100] $ \ ix -> forM [1..4] $ \ d -> do
             let (i,j) = index ix
                 ty1 = indexWith enumTy' (nat i)
                 ty2 = indexWith enumTy' (nat j)

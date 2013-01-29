@@ -1,5 +1,5 @@
 {-# LANGUAGE ParallelListComp, ScopedTypeVariables, TypeOperators #-}
-module Induction.Structural.Subterms (sillyInduction) where
+module Induction.Structural.Subterms (sillyInduction,subtermInduction) where
 
 import Control.Applicative hiding (empty)
 import Control.Monad.State
@@ -13,19 +13,6 @@ import Induction.Structural.Utils
 import Safe
 
 type C c t = (c,[Arg t])
-
--- | Gets all well-typed subterms of a term, including yourself.
---
--- The first argument is always yourself.
---
--- We need terms where the constructors are associated with their arguments.
-subterms :: Term (C c t) v -> [Term (C c t) v]
-subterms (Var x) = [Var x]
-subterms (Fun x tms) = Fun x tms : map (Fun x) (mapM subterms tms)
-subterms (Con c@(_,as) tms) = direct ++ concat indirect
-  where
-    direct   = map (Con c) (mapM subterms tms)
-    indirect = [ subterms tm | Rec _ <- as | tm <- tms ]
 
 type QuantTerm c v t = ([V v ::: t],TermV (C c t) v)
 type QuantTerms c v t = ([V v ::: t],[TermV (C c t) v])
@@ -106,22 +93,22 @@ makeIndParts qtms = [ IndPart qs [] tms | (qs,tms) <- qtms ]
 sillyInduction :: TyEnv c t -> [(v,t)] -> [Int] -> [IndPartV c v t]
 sillyInduction env args = removeArgs . runFresh . noHyps env args
 
-{-
-structuralInductionSubterms
-    :: (Ord c,Ord v)
-    => TyEnv c t
-    -- ^ Constructor typed environment
-    -> [(v,t)]
-    -- ^ The initial arguments and types to P
-    -> [Int]
-    -- ^ The coordinates to do induction on in P, in order
-    -> [IndPartV c v t]
-    -- ^ The set of clauses to prove
-structuralInductionSubterms ty_env args coords = runFresh $ do
+-- | Gets all well-typed subterms of a term, including yourself.
+--
+-- The first argument is always yourself.
+--
+-- We need terms where the constructors are associated with their arguments.
+subterms :: Term (C c t) v -> [Term (C c t) v]
+subterms (Var x) = [Var x]
+subterms (Fun x tms) = Fun x tms : map (Fun x) (mapM subterms tms)
+subterms (Con c@(_,as) tms) = direct ++ concat indirect
+  where
+    direct   = map (Con c) (mapM subterms tms)
+    indirect = [ subterms tm | Rec _ <- as | tm <- tms ]
 
-    args_fresh <- mapM (uncurry newTyped) args
+addHypotheses :: IndPart (C c t) v t -> IndPart (C c t) v t
+addHypotheses (IndPart qs _ tms) = IndPart qs (map ( (,) []) $ drop 1 $ mapM subterms tms) tms
 
-    let init_part = IndPart args_fresh [] (map (Var . fst) args_fresh)
+subtermInduction :: TyEnv c t -> [(v,t)] -> [Int] -> [IndPartV c v t]
+subtermInduction env args = removeArgs . map addHypotheses . runFresh . noHyps env args
 
-    concatFoldM (inductionNth ty_env) init_part coordinates
--}
