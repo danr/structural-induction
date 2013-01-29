@@ -82,7 +82,8 @@ mkPropTy sii ty n = mkProp sii (TestCase [ty] (replicate n 0))
 
 mkProp :: SII -> TestCase -> Property
 mkProp sii tc@(TestCase tys _) =
-    forAllShrink (startFromTypes tys) (map shrinkRepr') $ \ start ->
+    printTestCase (showIndP parts) $
+    forAllShrink (startFromTypes tys) (sequence . map shrinkRepr') $ \ start ->
         forAll (makeTracer start parts) $ \ trace ->
             case loop trace of
                 Just e  ->
@@ -96,7 +97,7 @@ tryWithTypes sii = (mkProp sii .) . TestCase
 
 main :: IO ()
 main = do
-    let tests = [("structuralInduction",structuralInduction)]
+    let tests = [("structuralInductionUnsound",structuralInductionUnsound)]
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
