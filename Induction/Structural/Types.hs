@@ -4,7 +4,8 @@
       ExplicitForAll,
       MultiParamTypeClasses,
       ScopedTypeVariables,
-      TypeOperators
+      TypeOperators,
+      FlexibleInstances
   #-}
 module Induction.Structural.Types
     ( Term(..)   , TermV
@@ -13,7 +14,6 @@ module Induction.Structural.Types
     , IndPart(..), IndPartV
     , (:::)
     , Arg(..)
-    , argRepr
     , unV
     , unVM
     , TyEnv
@@ -32,9 +32,9 @@ import Data.Generics.Geniplate
 -- Terms
 
 data Term c v
-    = Var { termVarName :: v }
-    | Con { termConName :: c , termArgs :: [Term c v] }
-    | Fun { termFunName :: v , termArgs :: [Term c v] }
+    = Var v
+    | Con c [Term c v]
+    | Fun v [Term c v]
     -- ^ Exponential datatypes yield functions
   deriving (Eq,Ord,Show)
 
@@ -97,12 +97,6 @@ data Arg t
     | Exp t [t]
   deriving (Eq,Ord,Show)
 
--- | Get the representation of the argument
-argRepr :: Arg t -> t
-argRepr (Rec t)    = t
-argRepr (NonRec t) = t
-argRepr (Exp t _)  = t
-
 {-| Type environment
 
     Given a type, returns the constructors and the types of their arguments,
@@ -134,6 +128,12 @@ type HypothesisV c v t = Hypothesis c (V v) t
 
 -- Removing fresh variables
 
+instanceTransformBi [t| forall c' c v t . ([IndPart c' v t],c) |]
+instanceTransformBi [t| forall c v v' t . (IndPart c v' t,v) |]
+
+unVM' :: (v -> Integer -> v) -> IndPartV c v t -> IndPart c v t
+unVM' f = transformBi (uncurry f)
+
 -- | Flattens out fresh variable names, in a monad
 unVM :: (Applicative m,Monad m)
      => (v -> Integer -> m v) -> IndPartV c v t -> m (IndPart c v t)
@@ -154,5 +154,4 @@ unVM f (IndPart skolem hyps concl)
 -- | Flatten out fresh variable names
 unV :: (v -> Integer -> v) -> IndPartV c v t -> IndPart c v t
 unV f = runIdentity . unVM (return .: f)
-
 

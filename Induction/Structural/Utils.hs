@@ -1,16 +1,17 @@
 {-# LANGUAGE ScopedTypeVariables, TypeOperators, PatternGuards #-}
 module Induction.Structural.Utils
-    ( V
-    , Fresh
-    , newFresh
+    ( newFresh
     , newTyped
     , refreshV
     , refreshTypedV
     , tidy
     , mdelete
     , quantify
+    -- * Args
+    , termArgs
     , argRepr
-    -- Terms
+    , isRec
+    -- * Terms
     , varFree
     , substList
     , subst
@@ -83,3 +84,17 @@ substList subs = transformBi $ \ tm ->
 subst :: Eq v => v -> Term c v -> Term c v -> Term c v
 subst x t = substList [(x,t)]
 
+-- | Get the representation of the argument
+argRepr :: Arg t -> t
+argRepr (Rec t)    = t
+argRepr (NonRec t) = t
+argRepr (Exp t _)  = t
+
+termArgs :: Term c v -> [Term c v]
+termArgs (Var x) = []
+termArgs (Con _ xs) = xs
+termArgs (Fun _ xs) = xs
+
+isRec :: Arg t -> Bool
+isRec Rec{} = True
+isRec _     = False
