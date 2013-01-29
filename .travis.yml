@@ -2,7 +2,7 @@ language: haskell
 
 install:
     - sudo apt-get -q -y install hlint
-    - cabal install -fWerror --enable-tests
+    - cabal install -fWerror --enable-tests --force-reinstalls
 
 script:
     - cabal test && hlint Induction && hlint test
