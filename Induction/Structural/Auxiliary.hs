@@ -1,5 +1,5 @@
 -- TODO: Write tests, for instance using haskell-doctest
-module Induction.Structural.Util where
+module Induction.Structural.Auxiliary where
 
 import Control.Monad (liftM)
 import Data.List     (sortBy, groupBy)

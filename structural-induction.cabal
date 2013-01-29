@@ -27,11 +27,13 @@ library
 
   exposed-modules:
     Induction.Structural,
-    Induction.Structural.Terms,
-    Induction.Structural.Linearise
+    Induction.Structural.Types,
+    Induction.Structural.Linearise,
+    Induction.Structural.Unsound
 
   other-modules:
-    Induction.Structural.Util
+    Induction.Structural.Auxiliary,
+    Induction.Structural.Utils
 
   build-depends:
     base,
@@ -46,7 +48,6 @@ test-suite walk
   main-is:        Main.hs
   hs-source-dirs: test
   ghc-options:    -Wall -threaded -with-rtsopts=-N
-  -- how to run program with several threads?
   if flag(Werror)
     ghc-options: -Werror
 
@@ -54,9 +55,9 @@ test-suite walk
     structural-induction,
     base,
     pretty,
-    QuickCheck,
-    mtl,
+    QuickCheck                >= 2.4,
+    mtl                       >= 2.1.2,
     parallel,
-    language-haskell-extract
-    testing-feat
+    language-haskell-extract,
+    testing-feat              >= 0.4
 
