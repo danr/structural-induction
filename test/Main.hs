@@ -104,15 +104,16 @@ main = do
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
-        ok_dbl_feat <- forM [0..100] $ \ ix -> forM [1..4] $ \ d -> do
+        let coordss = [[0],[1],[0,1],[0,0,0],[0,0,1],[0,1,1],[1,1,1]]
+
+        ok_dbl_feat <- forM [0..100] $ \ ix -> forM coordss $ \ coords -> do
             let (i,j) = index ix
                 ty1 = indexWith enumTy' (nat i)
                 ty2 = indexWith enumTy' (nat j)
                 tys = [ty1,ty2]
-                coords = drop (d `mod` 2) $ take (d `div` 2) $ cycle [0,1]
-            putStrLn $ name_sii ++ ": " ++ show tys
-                ++ " coords: " ++ show coords
-            quickCheckResult (tryWithTypes sii tys coords)
+                size = 100 `div` length coords
+            putStrLn $ name_sii ++ ": " ++ show tys ++ " coords: " ++ show coords
+            quickCheckWithResult stdArgs { maxSize = size } (tryWithTypes sii tys coords)
 
         ok_feat <- forM [0..100] $ \ ix -> forM [1..3] $ \ d -> do
             let ty = indexWith enumTy' ix
