@@ -36,7 +36,7 @@ mdelete x = filter (\ (y,_) -> x /= y)
 quantify :: Ord v => [v ::: t] -> Hypothesis c v t -> Hypothesis c v t
 quantify xs (ys,hyp) = ([(x,t) | (x,t) <- xs, any (x `varFree`) hyp] ++ ys,hyp)
 
--- | Tidy up hypethoses
+-- | Tidy up hypotheses
 tidy :: (Ord c,Ord v) => [Hypothesis c v t] -> [Hypothesis c v t]
 tidy = nubSortedOn (first (map fst)) . filter (not . all isAtom . snd)
   where
@@ -68,7 +68,25 @@ refreshV (v,_) = newFresh v
 refreshTypedV :: V v -> t -> Fresh (V v ::: t)
 refreshTypedV v t = flip (,) t <$> refreshV v
 
--- Terms
+-- * Arguments
+
+-- | Get the representation of the argument
+argRepr :: Arg t -> t
+argRepr (Rec t)    = t
+argRepr (NonRec t) = t
+argRepr (Exp t _)  = t
+
+termArgs :: Term c v -> [Term c v]
+termArgs (Var _)    = []
+termArgs (Con _ xs) = xs
+termArgs (Fun _ xs) = xs
+
+isRec :: Arg t -> Bool
+isRec Rec{} = True
+isRec _     = False
+
+
+-- * Terms
 
 -- | Does this variable occur in this term?
 varFree :: Eq v => v -> Term c v -> Bool
@@ -92,17 +110,3 @@ substList subs = transformBi $ \ tm ->
 subst :: Eq v => v -> Term c v -> Term c v -> Term c v
 subst x t = substList [(x,t)]
 
--- | Get the representation of the argument
-argRepr :: Arg t -> t
-argRepr (Rec t)    = t
-argRepr (NonRec t) = t
-argRepr (Exp t _)  = t
-
-termArgs :: Term c v -> [Term c v]
-termArgs (Var x) = []
-termArgs (Con _ xs) = xs
-termArgs (Fun _ xs) = xs
-
-isRec :: Arg t -> Bool
-isRec Rec{} = True
-isRec _     = False

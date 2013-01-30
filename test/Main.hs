@@ -98,7 +98,7 @@ main :: IO ()
 main = do
     let tests =
             [("subtermInduction",subtermInduction)
-            ,("sillyInduction",sillyInduction)
+            ,("caseAnalysis",caseAnalysis)
             -- ,("structuralInductionUnsound",structuralInductionUnsound)
             ]
     oks <- forM tests $ \ (name_sii,sii) -> do
