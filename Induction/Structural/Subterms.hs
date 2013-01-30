@@ -132,7 +132,7 @@ subterms (Con c@(_,as) tms) = direct ++ indirect
     -- Starting with this constructor. This includes the term we started with.
     direct   = map (Con c) (mapM subterms tms)
     -- Well-typed subterms of the arguments to the constructor
-    indirect = concat [ subterms tm | Rec _ <- as | tm <- tms ]
+    indirect = concat [ subterms tm | (Rec _,tm) <- zip as tms ]
 
 -- | Adds hypotheses to an IndPart.
 --
