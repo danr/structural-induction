@@ -5,3 +5,6 @@ import Test.QuickCheck
 halfSize :: (Int -> Gen a) -> Gen a
 halfSize m = sized $ \s -> resize (s `div` 2) (m s)
 
+divSize :: Int -> (Int -> Gen a) -> Gen a
+divSize d m = sized $ \s -> resize (s `div` d) (m s)
+

@@ -5,7 +5,6 @@ import Test.QuickCheck
 import Data.List
 import Control.Monad
 import Control.Applicative
-import Control.Parallel.Strategies
 
 import Induction.Structural
 
@@ -36,14 +35,15 @@ makeTracer args parts = go parts
         IndPart _ hyps conc:is
             | length args == length conc -> case zipWithM match args conc of
                 Nothing -> go is
-                Just vms -> halfSize $ \ _ -> do
+                Just vms -> divSize (length hyps + 1) $ \ _ -> do
                     argss' <- mapM (construct (concat vms)) hyps
                     forks <- mapM (`makeTracer` parts) argss'
-                    return (Fork args (forks `using` rpar))
+                    return (Fork args forks)
             | otherwise -> mk_error $ "Unequal lengths (conc=" ++ show conc ++ ")"
         _ -> mk_error "No case"
       where
         mk_error msg = error $
             "makeTracer " ++ show args ++ " : " ++ msg ++ "!" ++
             "\nDetails: args = (" ++ intercalate " , " (map showRepr' args) ++ ")" ++
-            "\nCheck Env.match and EnvTypes.==?, or case is missing from schema"
+            "\nCheck Env.match and EnvTypes.==?, or case is missing from schema:" ++
+            "\n" ++ showIndP parts

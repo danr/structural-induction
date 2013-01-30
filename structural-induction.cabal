@@ -48,7 +48,7 @@ test-suite walk
   type:           exitcode-stdio-1.0
   main-is:        Main.hs
   hs-source-dirs: test
-  ghc-options:    -Wall -threaded -with-rtsopts=-N
+  ghc-options:    -Wall
   if flag(Werror)
     ghc-options: -Werror
 
@@ -58,7 +58,6 @@ test-suite walk
     pretty,
     QuickCheck                >= 2.4,
     mtl                       >= 2.1.2,
-    parallel,
     language-haskell-extract,
     testing-feat              >= 0.4
 
