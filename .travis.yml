@@ -7,3 +7,5 @@ install:
 script:
     - hlint Induction/ test/ && cabal test
 
+after_script:
+    - cat dist/test/structural-induction-0.1-walk.log; true
