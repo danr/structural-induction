@@ -1,7 +1,7 @@
 language: haskell
 
 install:
-    - sudo apt-get -q -y install hlint haskell-src-exts haskell-mtl haskell-regex-posix
+    - sudo apt-get -q -y install hlint libghc-src-exts-dev libghc-mtl-dev libghc-regex-posix-dev
     - cabal install -fWerror --enable-tests --force-reinstalls
 
 script:
