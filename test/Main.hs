@@ -94,6 +94,9 @@ mkProp sii tc@(TestCase tys _) =
 tryWithTypes :: SII -> [Ty'] -> [Int] -> Property
 tryWithTypes sii = (mkProp sii .) . TestCase
 
+coordss :: [[Int]]
+coordss = [ replicate (d - r) 0 ++ replicate r 1 | d <- [0..4], r <- [0..d] ]
+
 main :: IO ()
 main = do
     let tests =
@@ -104,9 +107,14 @@ main = do
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
-        let coordss = [[0],[1],[0,1],[0,0,0],[0,0,1],[0,1,1],[1,1,1]]
+        ok_feat <- forM [0..500] $ \ ix -> forM [1..4] $ \ d -> do
+            let ty = indexWith enumTy' ix
+                size = 100 `div` d
+            putStrLn $ name_sii ++ ": " ++ show ty ++ " depth: " ++ show d
+            quickCheckWithResult stdArgs { maxSize = size } (mkPropTy sii ty d)
 
-        ok_dbl_feat <- forM [0..100] $ \ ix -> forM coordss $ \ coords -> do
+
+        ok_dbl_feat <- forM [0..500] $ \ ix -> forM coordss $ \ coords -> do
             let (i,j) = index ix
                 ty1 = indexWith enumTy' (nat i)
                 ty2 = indexWith enumTy' (nat j)
@@ -115,10 +123,6 @@ main = do
             putStrLn $ name_sii ++ ": " ++ show tys ++ " coords: " ++ show coords
             quickCheckWithResult stdArgs { maxSize = size } (tryWithTypes sii tys coords)
 
-        ok_feat <- forM [0..100] $ \ ix -> forM [1..3] $ \ d -> do
-            let ty = indexWith enumTy' ix
-            putStrLn $ name_sii ++ ": " ++ show ty ++ " depth: " ++ show d
-            quickCheckResult (mkPropTy sii ty d)
 
         ok_manual <- sequence $(functionExtractorMap "^prop_"
             [| \ name_prop prop -> do

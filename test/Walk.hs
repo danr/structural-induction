@@ -27,6 +27,16 @@ construct1 hyps vm tm = case tm of
     Con s tms ->  mkCon s <$> mapM (construct1 hyps vm) tms
     Fun{} -> error "exponentials not supported"
 
+-- | We can only pick 1-2 hyps, otherwise we get crazy exponential behaviour
+pickHyps :: [a] -> Gen [a]
+pickHyps [] = return []
+pickHyps hs = do
+    let n = length hs - 1
+    i <- choose (0,n)
+    i' <- choose (0,n)
+    two <- arbitrary
+    return $ if two && i /= i' then [hs !! i,hs !! i'] else [hs !! i]
+
 -- TODO: Can this be reorganized so we get an efficient unrolling?
 makeTracer :: [Repr'] -> [IndP] -> Gen (Trace [Repr'])
 makeTracer args parts = go parts
@@ -35,8 +45,10 @@ makeTracer args parts = go parts
         IndPart _ hyps conc:is
             | length args == length conc -> case zipWithM match args conc of
                 Nothing -> go is
-                Just vms -> divSize (length hyps + 1) $ \ _ -> do
-                    argss' <- mapM (construct (concat vms)) hyps
+                Just vms -> halfSize $ \ _ -> do
+                    -- Throw away some hypotheses
+                    hyps' <- pickHyps hyps
+                    argss' <- mapM (construct (concat vms)) hyps'
                     forks <- mapM (`makeTracer` parts) argss'
                     return (Fork args forks)
             | otherwise -> mk_error $ "Unequal lengths (conc=" ++ show conc ++ ")"
