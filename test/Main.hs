@@ -2,6 +2,10 @@
 module Main where
 
 import Control.Monad
+import Control.Applicative
+
+import Data.List
+import Data.Ord
 
 import System.Exit (exitFailure)
 
@@ -18,6 +22,7 @@ import Trace
 import Env
 import EnvTypes
 import Walk
+import Util
 
 -- | Structural Induction Instatiator
 type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [IndPartV Con' String Ty']
@@ -85,51 +90,44 @@ mkProp sii tc@(TestCase tys _) =
     forAllShrink (startFromTypes tys) (mapM shrinkRepr') $ \ start ->
         forAll (makeTracer start parts) $ \ trace ->
             case loop trace of
-                Just e  ->
-                    printTestCase (show e) $
-                    printTestCase (showIndP parts) False
+                Just e  -> printTestCase (showIndP parts) False
                 Nothing -> property True
   where parts = ind sii tc
 
-tryWithTypes :: SII -> [Ty'] -> [Int] -> Property
-tryWithTypes sii = (mkProp sii .) . TestCase
-
-coordss :: [[Int]]
-coordss = [ replicate (d - r) 0 ++ replicate r 1 | d <- [0..4], r <- [0..d] ]
+makeTestCases :: Integer -> IO [TestCase]
+makeTestCases tests = concat <$>
+    forM [0..tests] (\ ix -> do
+        let tys = indexWith enumTy's ix
+            all_coordss = concat [ coordss (length tys - 1) d | d <- [0..4] ]
+        coordss' <- head <$> sample' (shuffle all_coordss)
+        let css = nub . sortBy (comparing length) . sort . take 20 $ coordss'
+        return $ map (TestCase tys) css
+    )
 
 main :: IO ()
 main = do
     let tests =
             [("subtermInduction",subtermInduction)
             ,("caseAnalysis",caseAnalysis)
-            -- ,("structuralInductionUnsound",structuralInductionUnsound)
             ]
+            -- [("structuralInductionUnsound",structuralInductionUnsound)]
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
-        ok_feat <- forM [0..500] $ \ ix -> forM [1..4] $ \ d -> do
-            let ty = indexWith enumTy' ix
-                size = 100 `div` d
-            putStrLn $ name_sii ++ ": " ++ show ty ++ " depth: " ++ show d
-            quickCheckWithResult stdArgs { maxSize = size } (mkPropTy sii ty d)
+        testcases <- makeTestCases 500
+        let tests = length testcases
 
-
-        ok_dbl_feat <- forM [0..500] $ \ ix -> forM coordss $ \ coords -> do
-            let (i,j) = index ix
-                ty1 = indexWith enumTy' (nat i)
-                ty2 = indexWith enumTy' (nat j)
-                tys = [ty1,ty2]
-                size = 100 `div` length coords
-            putStrLn $ name_sii ++ ": " ++ show tys ++ " coords: " ++ show coords
-            quickCheckWithResult stdArgs { maxSize = size } (tryWithTypes sii tys coords)
-
+        ok_feat <- forM (zip testcases [0..]) $ \ (tc@(TestCase tys cs),i) -> do
+            putStrLn $ "(" ++ show i ++ "/" ++ show tests ++ ") " ++
+                       name_sii ++ ": " ++ show tys ++ " coords: " ++ show cs
+            quickCheckResult (mkProp sii tc)
 
         ok_manual <- sequence $(functionExtractorMap "^prop_"
             [| \ name_prop prop -> do
                 putStrLn $ name_sii ++ ": " ++ name_prop
                 quickCheckResult (prop sii) |])
 
-        return $ all isSuccess (ok_manual ++ concat (ok_feat ++ ok_dbl_feat))
+        return $ all isSuccess (ok_manual ++ ok_feat)
 
     unless (and oks) exitFailure
 

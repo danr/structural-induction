@@ -62,6 +62,9 @@ toTy u = case u of
 enumTy' :: Enumerate Ty'
 enumTy' = fmap toTy enumerate
 
+enumTy's :: Enumerate [Ty']
+enumTy's = fmap (map toTy) enumerate
+
 showRepr :: Repr a -> String
 showRepr r = case r of
     Unit      -> "Unit"
