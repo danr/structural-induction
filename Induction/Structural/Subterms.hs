@@ -64,7 +64,7 @@ inductionTm env (qs0,tm0) = go tm0
     go :: TermV (C c t) v -> Fresh [QuantTerm c v t]
     go tm = case tm of
         Var x@(_,x_idx) -> do
-            let ty = headNote "inductionTm: unbound variable!" $
+            let ty = headNote "inductionTm: unbound variable!"
                      [ t | ((_,idx),t) <- qs0, x_idx == idx ]
             fromMaybe [([(x,ty)],tm)] <$> inst env x ty
         Con c tms -> goTms (Con c) tms

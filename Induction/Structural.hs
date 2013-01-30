@@ -1,9 +1,5 @@
-module Induction.Structural
-    ( module Induction.Structural.Types
-    , module Induction.Structural.Unsound
-    , module Induction.Structural.Subterms
-    ) where
+module Induction.Structural (module X) where
 
-import Induction.Structural.Types
-import Induction.Structural.Unsound
-import Induction.Structural.Subterms
+import Induction.Structural.Types as X
+import Induction.Structural.Unsound as X
+import Induction.Structural.Subterms as X
