@@ -101,10 +101,10 @@ import Safe
 -}
 -- | Induction on a constructor, given its arguments as above
 indCon :: forall c v t . (Ord c,Ord v)
-       => ObligationTagged c v t -> Tagged v -> c -> [Arg t] -> Fresh (ObligationTagged c v t)
+       => TaggedObligation c v t -> Tagged v -> c -> [Arg t] -> Fresh (TaggedObligation c v t)
 indCon (Obligation x_and_xs gamma_and_phi psi) x con arg_types = do
 
-   let phis :: [HypothesisTagged c v t]
+   let phis :: [TaggedHypothesis c v t]
        (phis,gamma) = partition (any (varFree x) . snd) gamma_and_phi
 
        xs = mdelete x x_and_xs
@@ -188,8 +188,8 @@ indCon (Obligation x_and_xs gamma_and_phi psi) x con arg_types = do
 -- | This function returns the hypothesis, given a φ(/x),
 --      i.e a hypothesis waiting for a substiution
 hypothesis :: (Ord c,Ord v)
-           => (TermTagged c v -> HypothesisTagged c v t) -> Tagged v -> Arg t
-           -> Fresh (Maybe (HypothesisTagged c v t))
+           => (TaggedTerm c v -> TaggedHypothesis c v t) -> Tagged v -> Arg t
+           -> Fresh (Maybe (TaggedHypothesis c v t))
 hypothesis phi_slash xi arg = case arg of
    NonRec _        -> return Nothing
    Rec _           -> return (Just (phi_slash (Var xi)))
@@ -202,7 +202,7 @@ hypothesis phi_slash xi arg = case arg of
 --
 -- Returns a number of clauses to be proved, one for each constructor.
 induction :: (Ord c,Ord v)
-          => ObligationTagged c v t -> Tagged v -> [(c,[Arg t])] -> Fresh [ObligationTagged c v t]
+          => TaggedObligation c v t -> Tagged v -> [(c,[Arg t])] -> Fresh [TaggedObligation c v t]
 induction phi x cons = sequence [ indCon phi x con arg_types
                                 | (con,arg_types) <- cons ]
 
@@ -212,7 +212,7 @@ induction phi x cons = sequence [ indCon phi x con arg_types
 -- be a constructor x : xs, and then we can do induction on x and xs
 -- (possibly).
 inductionTm :: (Ord c,Ord v)
-            => TyEnv c t -> ObligationTagged c v t -> TermTagged c v -> Fresh [ObligationTagged c v t]
+            => TyEnv c t -> TaggedObligation c v t -> TaggedTerm c v -> Fresh [TaggedObligation c v t]
 inductionTm ty_env part@(Obligation xs _ _) tm = case tm of
     Var x -> let ty = lookupJustNote "inductionTm: x not quantified" x xs
              in  case ty_env ty of
@@ -226,7 +226,7 @@ getNthArg i p = atNote "Induction.getNthArg" (conclusion p) i
 
 -- | Induction on the term on the n:th coordinate of the predicate.
 inductionNth :: (Ord c,Ord v)
-             => TyEnv c t -> ObligationTagged c v t -> Int -> Fresh [ObligationTagged c v t]
+             => TyEnv c t -> TaggedObligation c v t -> Int -> Fresh [TaggedObligation c v t]
 inductionNth ty_env phi i = inductionTm ty_env phi (getNthArg i phi)
 
 -- | Perform repeated structural induction, given the typing environment
@@ -244,7 +244,7 @@ structuralInductionUnsound
     -- ^ The initial arguments and types to P
     -> [Int]
     -- ^ The coordinates to do induction on in P, in order
-    -> [ObligationTagged c v t]
+    -> [TaggedObligation c v t]
     -- ^ The set of clauses to prove
 structuralInductionUnsound ty_env args coordinates = runFresh $ do
 

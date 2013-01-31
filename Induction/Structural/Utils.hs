@@ -14,10 +14,10 @@ import Data.Generics.Geniplate
 import Safe
 
 -- | Tagged terms
-type TermTagged c v = Term c (Tagged v)
+type TaggedTerm c v = Term c (Tagged v)
 
 -- | Tagged hypotheses
-type HypothesisTagged c v t = Hypothesis c (Tagged v) t
+type TaggedHypothesis c v t = Hypothesis c (Tagged v) t
 
 -- | Delete a varibale from a type environment
 mdelete :: Eq a => a -> [(a,b)] -> [(a,b)]

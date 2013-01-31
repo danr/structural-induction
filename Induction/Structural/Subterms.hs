@@ -26,8 +26,8 @@ import Safe
 type C c t = (c,[Arg t])
 
 -- Term and terms explicitly quantified with variables
-type QuantTerm c v t = ([(Tagged v,t)],TermTagged (C c t) v)
-type QuantTerms c v t = ([(Tagged v,t)],[TermTagged (C c t) v])
+type QuantTerm c v t = ([(Tagged v,t)],TaggedTerm (C c t) v)
+type QuantTerms c v t = ([(Tagged v,t)],[TaggedTerm (C c t) v])
 
 -- Given
 --
@@ -70,7 +70,7 @@ inductionTm :: forall c v t .
                TyEnv c t -> QuantTerm c v t -> Fresh [QuantTerm c v t]
 inductionTm env (qs0,tm0) = go tm0
   where
-    go :: TermTagged (C c t) v -> Fresh [QuantTerm c v t]
+    go :: TaggedTerm (C c t) v -> Fresh [QuantTerm c v t]
     go tm = case tm of
         Var x@(_,x_idx) -> do
             let ty = headNote "inductionTm: unbound variable!"
@@ -79,8 +79,8 @@ inductionTm env (qs0,tm0) = go tm0
         Con c tms -> goTms (Con c) tms
         Fun f tms -> goTms (Fun f) tms
 
-    goTms :: ([TermTagged (C c t) v] -> TermTagged (C c t) v) ->
-             [TermTagged (C c t) v] -> Fresh [QuantTerm c v t]
+    goTms :: ([TaggedTerm (C c t) v] -> TaggedTerm (C c t) v) ->
+             [TaggedTerm (C c t) v] -> Fresh [QuantTerm c v t]
     goTms mk tms0 = do
         qtmss <- mapM go tms0
         return [ (qs,mk tms) | (qs,tms) <- makeQuantTerms qtmss ]
@@ -97,7 +97,7 @@ repeatInductionTm env v t n0 = do
 
 -- | Unroll to a given depth, but does not add any hypotheses
 noHyps :: forall c v t . TyEnv c t -> [(v,t)] -> [Int]
-       -> Fresh [ObligationTagged (C c t) v t]
+       -> Fresh [TaggedObligation (C c t) v t]
 noHyps env vars coords = do
     obligs <- sequence
         [ repeatInductionTm env v t (length (filter (ix ==) coords))
@@ -107,7 +107,7 @@ noHyps env vars coords = do
     return $ makeObligations (makeQuantTerms obligs)
 
 -- | Make Obligations: this means to add empty hypotheses to QuantTerms.
-makeObligations :: [QuantTerms c v t] -> [ObligationTagged (C c t) v t]
+makeObligations :: [QuantTerms c v t] -> [TaggedObligation (C c t) v t]
 makeObligations qtms = [ Obligation qs [] tms | (qs,tms) <- qtms ]
 
 -- | Removes the argument type information from the constructors
@@ -125,7 +125,7 @@ removeArgs parts =
 -- | Does case analysis on a list of typed variables. No hypotheses.
 --
 -- subtermInduction is eactly this, but we add the subterms as hypotheses.
-caseAnalysis :: TyEnv c t -> [(v,t)] -> [Int] -> [ObligationTagged c v t]
+caseAnalysis :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
 caseAnalysis env args = removeArgs . runFresh . noHyps env args
 
 -- | Gets all well-typed subterms of a term, including yourself.
@@ -154,7 +154,7 @@ addHypotheses (Obligation qs _ tms) = Obligation qs hyps tms
     hyps = [ ([],h) | h <- drop 1 (mapM subterms tms) ]
 
 -- | Subterm induction
-subtermInduction :: TyEnv c t -> [(v,t)] -> [Int] -> [ObligationTagged c v t]
+subtermInduction :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
 subtermInduction env args =
     removeArgs . map addHypotheses . runFresh . noHyps env args
 
@@ -164,7 +164,7 @@ subtermInduction env args =
 --      forall x y . (forall y'.P(x,y')) -> P (K x,y)
 --
 -- Important to drop 1, otherwise we get the conclusion as a hypothesis!
-addHypothesesQ :: ObligationTagged (C c t) v t -> Fresh (ObligationTagged (C c t) v t)
+addHypothesesQ :: TaggedObligation (C c t) v t -> Fresh (TaggedObligation (C c t) v t)
 addHypothesesQ ip = do -- Obligation qs hyps tms
 
     let Obligation qs hyps conc = addHypotheses ip
@@ -190,7 +190,7 @@ addHypothesesQ ip = do -- Obligation qs hyps tms
     return (Obligation qs (map (first concat) hyps') conc)
 
 -- | Subterm induction
-subtermInductionQ :: TyEnv c t -> [(v,t)] -> [Int] -> [ObligationTagged c v t]
+subtermInductionQ :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
 subtermInductionQ env args =
     removeArgs . runFresh . (mapM addHypothesesQ <=< noHyps env args)
 

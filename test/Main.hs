@@ -25,7 +25,7 @@ import Walk
 import Util
 
 -- | Structural Induction Instatiator
-type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [ObligationTagged Con' String Ty']
+type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [TaggedObligation Con' String Ty']
 
 -- | Do induction on a test case
 ind :: SII -> TestCase -> [IndP]

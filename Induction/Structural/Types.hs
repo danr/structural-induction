@@ -11,7 +11,7 @@
 module Induction.Structural.Types
     (
     -- * Obligations
-      Obligation(..), ObligationTagged,
+      Obligation(..), TaggedObligation,
       Predicate,
       Hypothesis,
     -- ** Terms
@@ -131,11 +131,11 @@ type TyEnv c t = t -> Maybe [(c,[Arg t])]
 -- | Cheap way of introducing fresh variables
 type Tagged v = (v,Integer)
 
--- | Obligations with tagged variables (see `V`)
-type ObligationTagged c v t = Obligation c (Tagged v) t
+-- | Obligations with tagged variables (see `Tagged` and `unTag`)
+type TaggedObligation c v t = Obligation c (Tagged v) t
 
--- | Removing the fresh variables, in a monad
-unTagM :: Monad m => (v -> Integer -> m v) -> ObligationTagged c v t -> m (Obligation c v t)
+-- | Removing tagged (fresh) variables, in a monad
+unTagM :: Monad m => (v -> Integer -> m v) -> TaggedObligation c v t -> m (Obligation c v t)
 unTagM f (Obligation skolem hyps concl)
     = Obligation <$> unQuant skolem
               <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
@@ -153,7 +153,7 @@ unTagM f (Obligation skolem hyps concl)
         Con c tms -> Con c <$> mapM unTm tms
         Fun x tms -> Fun <$> f' x <*> mapM unTm tms
 
--- | Removing the fresh variables
-unTag :: (v -> Integer -> v) -> ObligationTagged c v t -> Obligation c v t
+-- | Removing tagged (fresh) variables
+unTag :: (v -> Integer -> v) -> TaggedObligation c v t -> Obligation c v t
 unTag f = runIdentity . unTagM (return .: f)
 
