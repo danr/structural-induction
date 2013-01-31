@@ -8,6 +8,7 @@ module Induction.Structural.Utils
     , refreshTypedV
     , tidy
     , mdelete
+    , mfindVNote
     , quantify
     -- * Args
     , termArgs
@@ -28,9 +29,15 @@ import Induction.Structural.Types
 
 import Data.Generics.Geniplate
 
+import Safe
+
 -- | Delete a varibale from a type environment
 mdelete :: Eq a => a -> [a ::: b] -> [a ::: b]
 mdelete x = filter (\ (y,_) -> x /= y)
+
+-- | Find the type of a variable using the index in a type environment
+mfindVNote :: String -> V a -> [V a ::: t] -> t
+mfindVNote note (_,xi) = snd . headNote note . filter (\ ((_,yi),_) -> xi == yi)
 
 -- | Quantify in a hypothesis
 quantify :: Ord v => [v ::: t] -> Hypothesis c v t -> Hypothesis c v t

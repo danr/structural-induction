@@ -107,7 +107,8 @@ makeTestCases tests = concat <$>
 main :: IO ()
 main = do
     let tests =
-            [("subtermInduction",subtermInduction)
+            [("subtermInductionQ",subtermInductionQ)
+            ,("subtermInduction",subtermInduction)
             ,("caseAnalysis",caseAnalysis)
             ]
             -- [("structuralInductionUnsound",structuralInductionUnsound)]

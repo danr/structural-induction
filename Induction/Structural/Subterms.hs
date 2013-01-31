@@ -1,7 +1,9 @@
 {-# LANGUAGE ParallelListComp, ScopedTypeVariables, TypeOperators #-}
-module Induction.Structural.Subterms (caseAnalysis,subtermInduction) where
+module Induction.Structural.Subterms
+    (caseAnalysis,subtermInduction,subtermInductionQ) where
 
-import Control.Applicative hiding (empty)
+import Control.Applicative
+import Control.Arrow (first)
 import Control.Monad.State
 
 import Data.Maybe
@@ -148,4 +150,40 @@ addHypotheses (IndPart qs _ tms) = IndPart qs hyps tms
 subtermInduction :: TyEnv c t -> [(v,t)] -> [Int] -> [IndPartV c v t]
 subtermInduction env args =
     removeArgs . map addHypotheses . runFresh . noHyps env args
+
+-- | Adds hypotheses to an IndPart, requantifying over naked variables
+--
+-- I.e. forall x y . P(K x,y) becomes
+--      forall x y . (forall y'.P(x,y')) -> P (K x,y)
+--
+-- Important to drop 1, otherwise we get the conclusion as a hypothesis!
+addHypothesesQ :: IndPartV (C c t) v t -> Fresh (IndPartV (C c t) v t)
+addHypothesesQ ip = do -- IndPart qs hyps tms
+
+    let IndPart qs hyps conc = addHypotheses ip
+
+        mk_msg = ("addHypothesesQ: " ++)
+        msg_unbound  = mk_msg "Unbound variable!"
+        msg_mismatch = mk_msg "Concrete hypotheses but abstract conclusion!"
+
+        -- tm is from a hypothesis, e from the conclusion.
+        -- If e is a variable, tm should be the same, and we requantify over it
+        addQ tm e = case e of
+            Var x@(_,xi) -> case tm of
+                Var (_,yi)
+                    | xi == yi -> do
+                        let t = mfindVNote msg_unbound x qs
+                        xt'@(x',_) <- refreshTypedV x t
+                        return ([xt'],Var x')
+                _ -> error msg_mismatch
+            _ -> return ([],tm)
+
+    hyps' <- forM hyps $ \ ([],tms) -> mapAndUnzipM (uncurry addQ) (zip tms conc)
+
+    return (IndPart qs (map (first concat) hyps') conc)
+
+-- | Subterm induction
+subtermInductionQ :: TyEnv c t -> [(v,t)] -> [Int] -> [IndPartV c v t]
+subtermInductionQ env args =
+    removeArgs . runFresh . (mapM addHypothesesQ <=< noHyps env args)
 
