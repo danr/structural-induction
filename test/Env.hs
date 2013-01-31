@@ -6,16 +6,15 @@ import Test.QuickCheck
 import Control.Applicative
 
 import Induction.Structural
-import Induction.Structural.Linearise
 
 import EnvTypes
 import Nat
 import Util
 
-type IndP = Obligation Con' String Ty'
-type Tm   = Term Con' String
-type P    = Predicate Con' String
-type Hyp  = Hypothesis Con' String Ty'
+type Oblig = Obligation Con' String Ty'
+type Tm    = Term Con' String
+type P     = Predicate Con' String
+type Hyp   = Hypothesis Con' String Ty'
 
 -- | A small test environment. No exponentials for now.
 testEnv :: Repr a -> Maybe [(Con a,[Arg Ty'])]
@@ -122,8 +121,8 @@ match v tm0 = case tm0 of
     comb r s = (++) <$> r <*> s
 
 -- | Show induction schema
-showIndP :: [IndP] -> String
-showIndP = unlines . map ((++ ".") . render . linPart style)
+showOblig :: [Oblig] -> String
+showOblig = unlines . map ((++ ".") . render . linObligation style)
   where
     style :: Style Con' String Ty'
     style = Style (text . show) text (text . show)

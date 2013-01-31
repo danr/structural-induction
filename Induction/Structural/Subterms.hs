@@ -21,6 +21,10 @@ import Induction.Structural.Utils
 
 import Safe
 
+-- | Find the type of a variable using the index in a type environment
+mfindVNote :: String -> Tagged a -> [(Tagged a,t)] -> t
+mfindVNote note (_,xi) = snd . headNote note . filter (\ ((_,yi),_) -> xi == yi)
+
 -- We annotate constructors in the terms with the types of the arguments they
 -- have to easily be able to calculate subterms
 type C c t = (c,[Arg t])

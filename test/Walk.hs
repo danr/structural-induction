@@ -16,7 +16,7 @@ import Util
 construct :: VarMap -> Hyp -> Gen [Repr']
 construct vm (hyps,tms) = mapM (construct1 hyps vm) tms
 
-construct1 :: [String ::: Ty'] -> VarMap -> Tm -> Gen Repr'
+construct1 :: [(String,Ty')] -> VarMap -> Tm -> Gen Repr'
 construct1 hyps vm tm = case tm of
     Var s -> case lookup s vm of
         Just u  -> return u
@@ -38,7 +38,7 @@ pickHyps hs = do
     return $ if two && i /= i' then [hs !! i,hs !! i'] else [hs !! i]
 
 -- TODO: Can this be reorganized so we get an efficient unrolling?
-makeTracer :: [Repr'] -> [IndP] -> Gen (Trace [Repr'])
+makeTracer :: [Repr'] -> [Oblig] -> Gen (Trace [Repr'])
 makeTracer args parts = go parts
   where
     go p = case p of
@@ -58,4 +58,4 @@ makeTracer args parts = go parts
             "makeTracer " ++ show args ++ " : " ++ msg ++ "!" ++
             "\nDetails: args = (" ++ intercalate " , " (map showRepr' args) ++ ")" ++
             "\nCheck Env.match and EnvTypes.==?, or case is missing from schema:" ++
-            "\n" ++ showIndP parts
+            "\n" ++ showOblig parts

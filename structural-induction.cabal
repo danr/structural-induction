@@ -26,13 +26,12 @@ library
     ghc-options: -Werror
 
   exposed-modules:
-    Induction.Structural
+    Induction.Structural,
+    Induction.Structural.Auxiliary,
+    Induction.Structural.Utils
 
   other-modules:
     Induction.Structural.Types,
-    Induction.Structural.Auxiliary,
-    Induction.Structural.Utils,
-    Induction.Structural.Unsound,
     Induction.Structural.Subterms,
     Induction.Structural.Linearise
 
@@ -40,9 +39,8 @@ library
     base,
     mtl,
     containers,
-    geniplate >= 0.6,
-    safe,
-    pretty
+    pretty,
+    safe
 
 test-suite walk
   type:           exitcode-stdio-1.0
@@ -59,5 +57,7 @@ test-suite walk
     QuickCheck                >= 2.4,
     mtl                       >= 2.1.2,
     language-haskell-extract,
-    testing-feat              >= 0.4
+    testing-feat              >= 0.4,
+    geniplate                 >= 0.6,
+    safe
 

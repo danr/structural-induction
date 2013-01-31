@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 -- | Internal auxiliary functions (pertaining to general haskell types)
 module Induction.Structural.Auxiliary where
 
@@ -9,11 +10,6 @@ import Data.Ord      (comparing)
 -- | Concatenate the results after mapM
 concatMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
 concatMapM f = liftM concat . mapM f
-
--- | Folds and concats in a monad
-concatFoldM :: Monad m => (a -> i -> m [a]) -> a -> [i] -> m [a]
-concatFoldM _ a []     = return [a]
-concatFoldM k a (x:xs) = k a x >>= concatMapM (\r -> concatFoldM k r xs)
 
 infixr 9 .:
 

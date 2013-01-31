@@ -1,13 +1,4 @@
 -- | Types
-{-# LANGUAGE
-      TemplateHaskell,
-      PatternGuards,
-      ExplicitForAll,
-      MultiParamTypeClasses,
-      ScopedTypeVariables,
-      TypeOperators,
-      FlexibleInstances
-  #-}
 module Induction.Structural.Types
     (
     -- * Obligations
@@ -30,8 +21,6 @@ import Control.Monad.Identity
 
 import Induction.Structural.Auxiliary ((.:))
 
-import Data.Generics.Geniplate
-
 -- | Terms
 --
 -- The simple term language only includes variables, constructors and functions.
@@ -41,12 +30,6 @@ data Term c v
     | Fun v [Term c v]
     -- ^ Induction on exponential data types yield assumptions with functions
   deriving (Eq,Ord,Show)
-
--- Geniplate Instances
-
-instanceTransformBi [t| forall c v . (Term c v,Term c v) |]
-instanceUniverseBi  [t| forall c v . (Term c v,Term c v) |]
-
 
 -- Typed variables are represented as (v,t)
 
@@ -79,53 +62,49 @@ data Obligation c v t = Obligation
 type Hypothesis c v t = ([(v,t)],Predicate c v)
 
 
-{-| Arguments
-
-    An argument to a constructor can be recursive or non-recursive.
-
-    For instance, when doing induction on [a], then (:) has two arguments,
-    NonRec a and Rec [a].
-
-    If doing induction on [Nat], then (:) has NonRec Nat and Rec [Nat]
-
-    So Rec signals that there should be emitted an induction hypothesis here.
-
-    Data types can also be exponential. Consider
-
-    @
-        data Ord = Zero | Succ Ord | Lim (Nat -> Ord)
-    @
-
-    Here, the Lim constructor is exponential, create it with
-
-    @
-        Exp (Nat -> Ord) [Nat]
-    @
-
-    The first argument is the type of the function, and the second
-    argument are the arguments to the function. The apparent duplication
-    is there because the type is kept entirely abstract in this module.
--}
+-- | Arguments
+--
+-- An argument to a constructor can be recursive or non-recursive.
+--
+-- For instance, when doing induction on [a], then (:) has two arguments,
+-- NonRec a and Rec [a].
+--
+-- If doing induction on [Nat], then (:) has NonRec Nat and Rec [Nat]
+--
+-- So Rec signals that there should be emitted an induction hypothesis here.
+--
+-- Data types can also be exponential. Consider
+--
+-- @
+--     data Ord = Zero | Succ Ord | Lim (Nat -> Ord)
+-- @
+--
+-- Here, the Lim constructor is exponential, create it with
+--
+-- @
+--     Exp (Nat -> Ord) [Nat]
+-- @
+--
+-- The first argument is the type of the function, and the second
+-- argument are the arguments to the function. The apparent duplication
+-- is there because the type is kept entirely abstract in this module.
 data Arg t
     = Rec t
     | NonRec t
     | Exp t [t]
   deriving (Eq,Ord,Show)
 
-{-| Type environment
-
-    Given a type, returns the constructors and the types of their arguments,
-    and also if the arguments are recursive, non-recursive or exponential (see Arg).
-
-    The function should instantiate type variables.
-    For instance, looking up the type List Nat, should return the constructors
-    Nil with args [], and Cons with args [NonRec Nat,Rec (List Nat)].
-
-    If it is not possible to do induction on this type, return Nothing.
-    Examples are function spaces and type variables.
-
--}
-
+-- | Type environment
+--
+-- Given a type, returns the constructors and the types of their arguments,
+-- and also if the arguments are recursive, non-recursive or exponential (see Arg).
+--
+-- The function should instantiate type variables.
+-- For instance, looking up the type List Nat, should return the constructors
+-- Nil with args [], and Cons with args [NonRec Nat,Rec (List Nat)].
+--
+-- If it is not possible to do induction on this type, return Nothing.
+-- Examples are function spaces and type variables.
 type TyEnv c t = t -> Maybe [(c,[Arg t])]
 
 -- | Cheap way of introducing fresh variables
@@ -135,7 +114,7 @@ type Tagged v = (v,Integer)
 type TaggedObligation c v t = Obligation c (Tagged v) t
 
 -- | Removing tagged (fresh) variables, in a monad
-unTagM :: Monad m => (v -> Integer -> m v) -> TaggedObligation c v t -> m (Obligation c v t)
+unTagM :: Monad m => (v -> Integer -> m v') -> TaggedObligation c v t -> m (Obligation c v' t)
 unTagM f (Obligation skolem hyps concl)
     = Obligation <$> unQuant skolem
               <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
@@ -154,6 +133,7 @@ unTagM f (Obligation skolem hyps concl)
         Fun x tms -> Fun <$> f' x <*> mapM unTm tms
 
 -- | Removing tagged (fresh) variables
-unTag :: (v -> Integer -> v) -> TaggedObligation c v t -> Obligation c v t
+unTag :: (v -> Integer -> v') -> TaggedObligation c v t -> Obligation c v' t
 unTag f = runIdentity . unTagM (return .: f)
 
+-- This function could be tested for being the identity on (,)

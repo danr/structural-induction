@@ -12,11 +12,12 @@ import System.Exit (exitFailure)
 import Test.QuickCheck
 import Test.QuickCheck.Test
 import Test.Feat.Access
-import Test.Feat.Modifiers (nat)
 
 import Language.Haskell.Extract
 
 import Induction.Structural
+
+-- import Unsound
 
 import Trace
 import Env
@@ -28,9 +29,9 @@ import Util
 type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [TaggedObligation Con' String Ty']
 
 -- | Do induction on a test case
-ind :: SII -> TestCase -> [IndP]
+ind :: SII -> TestCase -> [Oblig]
 ind sii (TestCase types coords) =
-    map (unTagged (\ x i -> x ++ show i)) $ sii testEnv' args coords
+    map (unTag (\ x i -> x ++ show i)) $ sii testEnv' args coords
   where
     args = zip vars types
 
@@ -90,7 +91,7 @@ mkProp sii tc@(TestCase tys _) =
     forAllShrink (startFromTypes tys) (mapM shrinkRepr') $ \ start ->
         forAll (makeTracer start parts) $ \ trace ->
             case loop trace of
-                Just e  -> printTestCase (showIndP parts) False
+                Just _  -> printTestCase (showOblig parts) False
                 Nothing -> property True
   where parts = ind sii tc
 
@@ -116,12 +117,13 @@ main = do
         putStrLn $ "== " ++ name_sii ++ " =="
 
         testcases <- makeTestCases 500
-        let tests = length testcases
+        let num_tests = length testcases
 
-        ok_feat <- forM (zip testcases [0..]) $ \ (tc@(TestCase tys cs),i) -> do
-            putStrLn $ "(" ++ show i ++ "/" ++ show tests ++ ") " ++
-                       name_sii ++ ": " ++ show tys ++ " coords: " ++ show cs
-            quickCheckResult (mkProp sii tc)
+        ok_feat <- forM (zip testcases ([0..] :: [Integer])) $
+            \ (tc@(TestCase tys cs),i) -> do
+                putStrLn $ "(" ++ show i ++ "/" ++ show num_tests ++ ") " ++
+                           name_sii ++ ": " ++ show tys ++ " coords: " ++ show cs
+                quickCheckResult (mkProp sii tc)
 
         ok_manual <- sequence $(functionExtractorMap "^prop_"
             [| \ name_prop prop -> do
