@@ -9,8 +9,8 @@ module Induction.Structural (
     module Induction.Structural.Linearise
 ) where
 
-
 import Induction.Structural.Subterms
 import Induction.Structural.Types
 import Induction.Structural.Linearise
 
+{-# ANN module "HLint: ignore Use import/export shortcut" #-}

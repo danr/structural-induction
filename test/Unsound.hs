@@ -6,8 +6,7 @@
       ScopedTypeVariables,
       TemplateHaskell,
       ExplicitForAll,
-      MultiParamTypeClasses,
-      ScopedTypeVariables
+      MultiParamTypeClasses
   #-}
 module Unsound (structuralInductionUnsound) where
 

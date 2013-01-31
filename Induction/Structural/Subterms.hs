@@ -1,5 +1,5 @@
 -- | Induction with subterms as hypotheses
-{-# LANGUAGE ParallelListComp, ScopedTypeVariables, TypeOperators #-}
+{-# LANGUAGE ParallelListComp, ScopedTypeVariables #-}
 module Induction.Structural.Subterms
     (
     -- * Induction with subterms as hypotheses

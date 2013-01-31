@@ -1,6 +1,6 @@
 {-# OPTIONS_HADDOCK hide #-}
 -- | Internal utility functions (pertaining to data types in this library)
-{-# LANGUAGE ScopedTypeVariables, TypeOperators, PatternGuards, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Induction.Structural.Utils where
 
 import Control.Applicative hiding (empty)

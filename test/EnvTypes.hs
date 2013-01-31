@@ -67,6 +67,7 @@ toTy u = case u of
 enumTy' :: Enumerate Ty'
 enumTy' = fmap toTy enumerate
 
+{-# ANN enumTy's "HLint: ignore Use camelCase" #-}
 enumTy's :: Enumerate [Ty']
 enumTy's = fmap (map toTy) enumerate
 
