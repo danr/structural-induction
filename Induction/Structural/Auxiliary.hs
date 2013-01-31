@@ -1,4 +1,4 @@
--- TODO: Write tests, for instance using haskell-doctest
+-- | Internal auxiliary functions (pertaining to general haskell types)
 module Induction.Structural.Auxiliary where
 
 import Control.Monad (liftM)

@@ -1,24 +1,6 @@
+-- | Internal utility functions (pertaining to data types in this library)
 {-# LANGUAGE ScopedTypeVariables, TypeOperators, PatternGuards, GeneralizedNewtypeDeriving #-}
-module Induction.Structural.Utils
-    ( Fresh
-    , runFresh
-    , newFresh
-    , newTyped
-    , refreshV
-    , refreshTypedV
-    , tidy
-    , mdelete
-    , mfindVNote
-    , quantify
-    -- * Args
-    , termArgs
-    , argRepr
-    , isRec
-    -- * Terms
-    , varFree
-    , substList
-    , subst
-    ) where
+module Induction.Structural.Utils where
 
 import Control.Arrow hiding ((<+>))
 import Control.Applicative hiding (empty)
@@ -31,16 +13,22 @@ import Data.Generics.Geniplate
 
 import Safe
 
+-- | Tagged terms
+type TermV c v = Term c (V v)
+
+-- | Tagged hypotheses
+type HypothesisV c v t = Hypothesis c (V v) t
+
 -- | Delete a varibale from a type environment
-mdelete :: Eq a => a -> [a ::: b] -> [a ::: b]
+mdelete :: Eq a => a -> [(a,b)] -> [(a,b)]
 mdelete x = filter (\ (y,_) -> x /= y)
 
 -- | Find the type of a variable using the index in a type environment
-mfindVNote :: String -> V a -> [V a ::: t] -> t
+mfindVNote :: String -> V a -> [(V a,t)] -> t
 mfindVNote note (_,xi) = snd . headNote note . filter (\ ((_,yi),_) -> xi == yi)
 
 -- | Quantify in a hypothesis
-quantify :: Ord v => [v ::: t] -> Hypothesis c v t -> Hypothesis c v t
+quantify :: Ord v => [(v,t)] -> Hypothesis c v t -> Hypothesis c v t
 quantify xs (ys,hyp) = ([(x,t) | (x,t) <- xs, any (x `varFree`) hyp] ++ ys,hyp)
 
 -- | Tidy up hypotheses
@@ -56,6 +44,7 @@ tidy = nubSortedOn (first (map fst)) . filter (not . all isAtom . snd)
 newtype Fresh a = Fresh (State Integer a)
   deriving (Functor,Applicative,Monad,MonadState Integer)
 
+-- | Run the fresh monad
 runFresh :: Fresh a -> a
 runFresh (Fresh m) = evalState m 0
 
@@ -64,7 +53,7 @@ newFresh :: v -> Fresh (V v)
 newFresh v = Fresh $ state $ \ s -> ((v,s),s+1)
 
 -- | Create a fresh variable that has a type
-newTyped :: v -> t -> Fresh (V v ::: t)
+newTyped :: v -> t -> Fresh (V v,t)
 newTyped v t = flip (,) t <$> newFresh v
 
 -- | Refresh variable
@@ -72,7 +61,7 @@ refreshV :: V v -> Fresh (V v)
 refreshV (v,_) = newFresh v
 
 -- | Refresh a variable that has a type
-refreshTypedV :: V v -> t -> Fresh (V v ::: t)
+refreshTypedV :: V v -> t -> Fresh (V v,t)
 refreshTypedV v t = flip (,) t <$> refreshV v
 
 -- * Arguments
@@ -83,11 +72,13 @@ argRepr (Rec t)    = t
 argRepr (NonRec t) = t
 argRepr (Exp t _)  = t
 
+-- | Arguments to a term
 termArgs :: Term c v -> [Term c v]
 termArgs (Var _)    = []
 termArgs (Con _ xs) = xs
 termArgs (Fun _ xs) = xs
 
+-- | Is this argument recursive?
 isRec :: Arg t -> Bool
 isRec Rec{} = True
 isRec _     = False

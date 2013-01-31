@@ -1,3 +1,4 @@
+-- | Types
 {-# LANGUAGE
       TemplateHaskell,
       PatternGuards,
@@ -8,32 +9,37 @@
       FlexibleInstances
   #-}
 module Induction.Structural.Types
-    ( Term(..)   , TermV
-    , Hypothesis , HypothesisV
-    , Predicate
-    , IndPart(..), IndPartV
-    , (:::)
-    , Arg(..)
-    , unV
-    , unVM
-    , TyEnv
-    , V
+    (
+    -- * Obligations
+      IndPart(..), IndPartV,
+      Predicate,
+      Hypothesis,
+    -- ** Terms
+      Term(..),
+    -- * Typing environment
+      TyEnv,
+    -- ** Arguments
+      Arg(..),
+    -- * Fresh variables
+      V,
+    -- ** Removing fresh variables
+      unV, unVM
     ) where
 
-import Control.Applicative hiding (empty)
 import Control.Monad.Identity
 
 import Induction.Structural.Auxiliary ((.:))
 
 import Data.Generics.Geniplate
 
--- Terms
-
+-- | Terms
+--
+-- The simple term language only includes variables, constructors and functions.
 data Term c v
     = Var v
     | Con c [Term c v]
     | Fun v [Term c v]
-    -- ^ Exponential datatypes yield functions
+    -- ^ Induction on exponential data types yield assumptions with functions
   deriving (Eq,Ord,Show)
 
 -- Geniplate Instances
@@ -42,24 +48,35 @@ instanceTransformBi [t| forall c v . (Term c v,Term c v) |]
 instanceUniverseBi  [t| forall c v . (Term c v,Term c v) |]
 
 
--- Typed variables
-type v ::: t = (v,t)
+-- Typed variables are represented as (v,t)
 
--- | Induction predicate type
+-- | A list of terms.
 --
--- The abstract predicate P is of some arity, and the arguments are in a list
+-- Example: @[tm1,tm2]@ corresponds to the formula /P(tm1,tm2)/
 type Predicate c v = [Term c v]
 
 -- | Induction part data type
+--
+-- Quantifier lists are represented as tuples of variables and their type.
 data IndPart c v t = IndPart
-    { implicit   :: [v ::: t]
+    { implicit   :: [(v,t)]
+    -- ^ Implicitly quantified variables (skolemised)
     , hypotheses :: [Hypothesis c v t]
+    -- ^ Hypotheses, with explicitly quantified variables
     , conclusion :: Predicate c v
+    -- ^ The induction conclusion
     }
-  deriving(Eq,Ord,Show)
 
--- | Hypotheses
-type Hypothesis c v t = ([v ::: t],Predicate c v)
+-- | Quantifier lists are represented as tuples of variables and their type.
+--
+-- Example:
+--
+-- @([(x,t1),(y,t2)],[tm1,tm2])@
+--
+-- corresponds to the formula
+--
+-- /forall (x : t1) (y : t2) . P(tm1,tm2)/
+type Hypothesis c v t = ([(v,t)],Predicate c v)
 
 
 {-| Arguments
@@ -109,26 +126,24 @@ data Arg t
 
 -}
 
-type TyEnv c t = t -> Maybe [c ::: [Arg t]]
+type TyEnv c t = t -> Maybe [(c,[Arg t])]
 
 -- | Cheap way of introducing fresh variables
 type V v = (v,Integer)
 
--- | Our datatypes with tagged variables
+-- | Obligations with tagged variables (see `V`)
 type IndPartV c v t = IndPart c (V v) t
-type TermV c v = Term c (V v)
-type HypothesisV c v t = Hypothesis c (V v) t
 
--- Removing fresh variables
-
--- | Flattens out fresh variable names, in a monad
-unVM :: (Applicative m,Monad m)
-     => (v -> Integer -> m v) -> IndPartV c v t -> m (IndPart c v t)
+-- | Removing the fresh variables, in a monad
+unVM :: Monad m => (v -> Integer -> m v) -> IndPartV c v t -> m (IndPart c v t)
 unVM f (IndPart skolem hyps concl)
     = IndPart <$> unQuant skolem
               <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
               <*> mapM unTm concl
   where
+    (<$>) = liftM
+    (<*>) = ap
+
     f' = uncurry f
 
     unQuant = mapM (\(v,t) -> (,) <$> f' v <*> return t)
@@ -138,7 +153,7 @@ unVM f (IndPart skolem hyps concl)
         Con c tms -> Con c <$> mapM unTm tms
         Fun x tms -> Fun <$> f' x <*> mapM unTm tms
 
--- | Flatten out fresh variable names
+-- | Removing the fresh variables
 unV :: (v -> Integer -> v) -> IndPartV c v t -> IndPart c v t
 unV f = runIdentity . unVM (return .: f)
 

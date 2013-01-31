@@ -26,15 +26,15 @@ library
     ghc-options: -Werror
 
   exposed-modules:
-    Induction.Structural,
-    Induction.Structural.Types,
-    Induction.Structural.Linearise
+    Induction.Structural
 
   other-modules:
+    Induction.Structural.Types,
     Induction.Structural.Auxiliary,
     Induction.Structural.Utils,
     Induction.Structural.Unsound,
-    Induction.Structural.Subterms
+    Induction.Structural.Subterms,
+    Induction.Structural.Linearise
 
   build-depends:
     base,

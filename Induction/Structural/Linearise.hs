@@ -1,22 +1,28 @@
+-- | Linearisation
 {-# LANGUAGE TypeOperators, RecordWildCards, ScopedTypeVariables #-}
-{-|
-
-   Linearises the parts defined in HipSpec.Induction.
-
--}
 module Induction.Structural.Linearise
-    (Style(..), strStyle, linPart) where
+    (
+    -- * Linearising (pretty-printing) obligations
+      linPart,
+      Style(..),
+      strStyle
+    ) where
 
-import Induction.Structural
+import Induction.Structural.Types
 
 import Text.PrettyPrint hiding (Style)
 
+-- | Functions for linearising constructors, variables and types.
 data Style c v t = Style
     { linc :: c -> Doc
+    -- ^ Constructor linearisation function
     , linv :: v -> Doc
+    -- ^ Variable linearisation function
     , lint :: t -> Doc
+    -- ^ Type linearisation function
     }
 
+-- | An example style where constructors, variables and types are represented as `String`.
 strStyle :: Style String String String
 strStyle = Style
     { linc = text
@@ -24,6 +30,7 @@ strStyle = Style
     , lint = text
     }
 
+-- | Linearises an Obligation, with a `Style`.
 linPart :: forall c v t . Style c v t -> IndPart c v t -> Doc
 linPart Style{..} p = case p of
     IndPart sks []   concl -> linForall sks <+> linPred concl
@@ -42,7 +49,7 @@ linPart Style{..} p = case p of
     linTypedVar :: v -> t -> Doc
     linTypedVar v t = linv v <+> colon <+> lint t
 
-    linForall :: [v ::: t] -> Doc
+    linForall :: [(v,t)] -> Doc
     linForall [] = empty
     linForall qs =
         bang <+> brackets (csv (map (uncurry linTypedVar) qs)) <+> colon

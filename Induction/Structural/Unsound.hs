@@ -1,3 +1,4 @@
+-- | An unsound induction principle, still around to test the testsuite against it
 {-# LANGUAGE ParallelListComp, ScopedTypeVariables, TypeOperators #-}
 module Induction.Structural.Unsound (structuralInductionUnsound) where
 
@@ -201,7 +202,7 @@ hypothesis phi_slash xi arg = case arg of
 --
 -- Returns a number of clauses to be proved, one for each constructor.
 induction :: (Ord c,Ord v)
-          => IndPartV c v t -> V v -> [c ::: [Arg t]] -> Fresh [IndPartV c v t]
+          => IndPartV c v t -> V v -> [(c,[Arg t])] -> Fresh [IndPartV c v t]
 induction phi x cons = sequence [ indCon phi x con arg_types
                                 | (con,arg_types) <- cons ]
 

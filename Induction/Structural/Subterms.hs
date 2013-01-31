@@ -1,6 +1,13 @@
+-- | Induction with subterms as hypotheses
 {-# LANGUAGE ParallelListComp, ScopedTypeVariables, TypeOperators #-}
 module Induction.Structural.Subterms
-    (caseAnalysis,subtermInduction,subtermInductionQ) where
+    (
+    -- * Induction with subterms as hypotheses
+      subtermInductionQ,
+      subtermInduction,
+    -- * Case analysis (no induction hypotheses)
+      caseAnalysis
+    ) where
 
 import Control.Applicative
 import Control.Arrow (first)
@@ -19,8 +26,8 @@ import Safe
 type C c t = (c,[Arg t])
 
 -- Term and terms explicitly quantified with variables
-type QuantTerm c v t = ([V v ::: t],TermV (C c t) v)
-type QuantTerms c v t = ([V v ::: t],[TermV (C c t) v])
+type QuantTerm c v t = ([(V v,t)],TermV (C c t) v)
+type QuantTerms c v t = ([(V v,t)],[TermV (C c t) v])
 
 -- Given
 --
