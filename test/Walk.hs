@@ -42,7 +42,7 @@ makeTracer :: [Repr'] -> [IndP] -> Gen (Trace [Repr'])
 makeTracer args parts = go parts
   where
     go p = case p of
-        IndPart _ hyps conc:is
+        Obligation _ hyps conc:is
             | length args == length conc -> case zipWithM match args conc of
                 Nothing -> go is
                 Just vms -> halfSize $ \ _ -> do

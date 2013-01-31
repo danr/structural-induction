@@ -101,15 +101,15 @@ import Safe
 -}
 -- | Induction on a constructor, given its arguments as above
 indCon :: forall c v t . (Ord c,Ord v)
-       => IndPartV c v t -> V v -> c -> [Arg t] -> Fresh (IndPartV c v t)
-indCon (IndPart x_and_xs gamma_and_phi psi) x con arg_types = do
+       => ObligationTagged c v t -> Tagged v -> c -> [Arg t] -> Fresh (ObligationTagged c v t)
+indCon (Obligation x_and_xs gamma_and_phi psi) x con arg_types = do
 
-   let phis :: [HypothesisV c v t]
+   let phis :: [HypothesisTagged c v t]
        (phis,gamma) = partition (any (varFree x) . snd) gamma_and_phi
 
        xs = mdelete x x_and_xs
 
-   xs' <- mapM (uncurry refreshTypedV) xs
+   xs' <- mapM (uncurry refreshTypedTagged) xs
 
    let (psi':phis') = map (second (map (substList [ (v,Var v')
                                                   | (v,_) <- xs
@@ -117,7 +117,7 @@ indCon (IndPart x_and_xs gamma_and_phi psi) x con arg_types = do
                           (([],psi):phis)
 
 
-   x1xn_args <- mapM (refreshTypedV x) arg_types
+   x1xn_args <- mapM (refreshTypedTagged x) arg_types
 
    let x1xn = map fst x1xn_args
 
@@ -132,7 +132,7 @@ indCon (IndPart x_and_xs gamma_and_phi psi) x con arg_types = do
 
        x1xn_typed = map (second argRepr) x1xn_args
 
-   return $ IndPart (x1xn_typed ++ xs)
+   return $ Obligation (x1xn_typed ++ xs)
                     (tidy $ gamma ++ antecedents)
                     consequent
 
@@ -188,13 +188,13 @@ indCon (IndPart x_and_xs gamma_and_phi psi) x con arg_types = do
 -- | This function returns the hypothesis, given a φ(/x),
 --      i.e a hypothesis waiting for a substiution
 hypothesis :: (Ord c,Ord v)
-           => (TermV c v -> HypothesisV c v t) -> V v -> Arg t
-           -> Fresh (Maybe (HypothesisV c v t))
+           => (TermTagged c v -> HypothesisTagged c v t) -> Tagged v -> Arg t
+           -> Fresh (Maybe (HypothesisTagged c v t))
 hypothesis phi_slash xi arg = case arg of
    NonRec _        -> return Nothing
    Rec _           -> return (Just (phi_slash (Var xi)))
    Exp _ arg_types -> do
-       args_typed <- mapM (refreshTypedV xi) arg_types
+       args_typed <- mapM (refreshTypedTagged xi) arg_types
        let phi = phi_slash (Fun xi (map (Var . fst) args_typed))
        return (Just (quantify args_typed phi))
 
@@ -202,7 +202,7 @@ hypothesis phi_slash xi arg = case arg of
 --
 -- Returns a number of clauses to be proved, one for each constructor.
 induction :: (Ord c,Ord v)
-          => IndPartV c v t -> V v -> [(c,[Arg t])] -> Fresh [IndPartV c v t]
+          => ObligationTagged c v t -> Tagged v -> [(c,[Arg t])] -> Fresh [ObligationTagged c v t]
 induction phi x cons = sequence [ indCon phi x con arg_types
                                 | (con,arg_types) <- cons ]
 
@@ -212,8 +212,8 @@ induction phi x cons = sequence [ indCon phi x con arg_types
 -- be a constructor x : xs, and then we can do induction on x and xs
 -- (possibly).
 inductionTm :: (Ord c,Ord v)
-            => TyEnv c t -> IndPartV c v t -> TermV c v -> Fresh [IndPartV c v t]
-inductionTm ty_env part@(IndPart xs _ _) tm = case tm of
+            => TyEnv c t -> ObligationTagged c v t -> TermTagged c v -> Fresh [ObligationTagged c v t]
+inductionTm ty_env part@(Obligation xs _ _) tm = case tm of
     Var x -> let ty = lookupJustNote "inductionTm: x not quantified" x xs
              in  case ty_env ty of
                      Just cons -> induction part x cons
@@ -221,12 +221,12 @@ inductionTm ty_env part@(IndPart xs _ _) tm = case tm of
     con_or_fun -> concatFoldM (inductionTm ty_env) part (termArgs con_or_fun)
 
 -- | Gets the n:th argument of the conclusion, in the consequent
-getNthArg :: Int -> IndPart c v t -> Term c v
+getNthArg :: Int -> Obligation c v t -> Term c v
 getNthArg i p = atNote "Induction.getNthArg" (conclusion p) i
 
 -- | Induction on the term on the n:th coordinate of the predicate.
 inductionNth :: (Ord c,Ord v)
-             => TyEnv c t -> IndPartV c v t -> Int -> Fresh [IndPartV c v t]
+             => TyEnv c t -> ObligationTagged c v t -> Int -> Fresh [ObligationTagged c v t]
 inductionNth ty_env phi i = inductionTm ty_env phi (getNthArg i phi)
 
 -- | Perform repeated structural induction, given the typing environment
@@ -244,13 +244,13 @@ structuralInductionUnsound
     -- ^ The initial arguments and types to P
     -> [Int]
     -- ^ The coordinates to do induction on in P, in order
-    -> [IndPartV c v t]
+    -> [ObligationTagged c v t]
     -- ^ The set of clauses to prove
 structuralInductionUnsound ty_env args coordinates = runFresh $ do
 
     args_fresh <- mapM (uncurry newTyped) args
 
-    let init_part = IndPart args_fresh [] (map (Var . fst) args_fresh)
+    let init_part = Obligation args_fresh [] (map (Var . fst) args_fresh)
 
     concatFoldM (inductionNth ty_env) init_part coordinates
 

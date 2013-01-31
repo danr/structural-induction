@@ -11,7 +11,7 @@
 module Induction.Structural.Types
     (
     -- * Obligations
-      IndPart(..), IndPartV,
+      Obligation(..), ObligationTagged,
       Predicate,
       Hypothesis,
     -- ** Terms
@@ -20,10 +20,10 @@ module Induction.Structural.Types
       TyEnv,
     -- ** Arguments
       Arg(..),
-    -- * Fresh variables
-      V,
-    -- ** Removing fresh variables
-      unV, unVM
+    -- * Tagged (fresh) variables
+      Tagged,
+    -- ** Removing tagged variables
+      unTag, unTagM
     ) where
 
 import Control.Monad.Identity
@@ -55,10 +55,10 @@ instanceUniverseBi  [t| forall c v . (Term c v,Term c v) |]
 -- Example: @[tm1,tm2]@ corresponds to the formula /P(tm1,tm2)/
 type Predicate c v = [Term c v]
 
--- | Induction part data type
+-- | Obligations
 --
 -- Quantifier lists are represented as tuples of variables and their type.
-data IndPart c v t = IndPart
+data Obligation c v t = Obligation
     { implicit   :: [(v,t)]
     -- ^ Implicitly quantified variables (skolemised)
     , hypotheses :: [Hypothesis c v t]
@@ -129,15 +129,15 @@ data Arg t
 type TyEnv c t = t -> Maybe [(c,[Arg t])]
 
 -- | Cheap way of introducing fresh variables
-type V v = (v,Integer)
+type Tagged v = (v,Integer)
 
 -- | Obligations with tagged variables (see `V`)
-type IndPartV c v t = IndPart c (V v) t
+type ObligationTagged c v t = Obligation c (Tagged v) t
 
 -- | Removing the fresh variables, in a monad
-unVM :: Monad m => (v -> Integer -> m v) -> IndPartV c v t -> m (IndPart c v t)
-unVM f (IndPart skolem hyps concl)
-    = IndPart <$> unQuant skolem
+unTagM :: Monad m => (v -> Integer -> m v) -> ObligationTagged c v t -> m (Obligation c v t)
+unTagM f (Obligation skolem hyps concl)
+    = Obligation <$> unQuant skolem
               <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
               <*> mapM unTm concl
   where
@@ -154,6 +154,6 @@ unVM f (IndPart skolem hyps concl)
         Fun x tms -> Fun <$> f' x <*> mapM unTm tms
 
 -- | Removing the fresh variables
-unV :: (v -> Integer -> v) -> IndPartV c v t -> IndPart c v t
-unV f = runIdentity . unVM (return .: f)
+unTag :: (v -> Integer -> v) -> ObligationTagged c v t -> Obligation c v t
+unTag f = runIdentity . unTagM (return .: f)
 

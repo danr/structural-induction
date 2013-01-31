@@ -14,17 +14,17 @@ import Data.Generics.Geniplate
 import Safe
 
 -- | Tagged terms
-type TermV c v = Term c (V v)
+type TermTagged c v = Term c (Tagged v)
 
 -- | Tagged hypotheses
-type HypothesisV c v t = Hypothesis c (V v) t
+type HypothesisTagged c v t = Hypothesis c (Tagged v) t
 
 -- | Delete a varibale from a type environment
 mdelete :: Eq a => a -> [(a,b)] -> [(a,b)]
 mdelete x = filter (\ (y,_) -> x /= y)
 
 -- | Find the type of a variable using the index in a type environment
-mfindVNote :: String -> V a -> [(V a,t)] -> t
+mfindVNote :: String -> Tagged a -> [(Tagged a,t)] -> t
 mfindVNote note (_,xi) = snd . headNote note . filter (\ ((_,yi),_) -> xi == yi)
 
 -- | Quantify in a hypothesis
@@ -49,20 +49,20 @@ runFresh :: Fresh a -> a
 runFresh (Fresh m) = evalState m 0
 
 -- | Creating a fresh variable
-newFresh :: v -> Fresh (V v)
+newFresh :: v -> Fresh (Tagged v)
 newFresh v = Fresh $ state $ \ s -> ((v,s),s+1)
 
 -- | Create a fresh variable that has a type
-newTyped :: v -> t -> Fresh (V v,t)
+newTyped :: v -> t -> Fresh (Tagged v,t)
 newTyped v t = flip (,) t <$> newFresh v
 
 -- | Refresh variable
-refreshV :: V v -> Fresh (V v)
-refreshV (v,_) = newFresh v
+refreshTagged :: Tagged v -> Fresh (Tagged v)
+refreshTagged (v,_) = newFresh v
 
 -- | Refresh a variable that has a type
-refreshTypedV :: V v -> t -> Fresh (V v,t)
-refreshTypedV v t = flip (,) t <$> refreshV v
+refreshTypedTagged :: Tagged v -> t -> Fresh (Tagged v,t)
+refreshTypedTagged v t = flip (,) t <$> refreshTagged v
 
 -- * Arguments
 

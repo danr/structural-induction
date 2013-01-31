@@ -12,7 +12,7 @@ import EnvTypes
 import Nat
 import Util
 
-type IndP = IndPart Con' String Ty'
+type IndP = Obligation Con' String Ty'
 type Tm   = Term Con' String
 type P    = Predicate Con' String
 type Hyp  = Hypothesis Con' String Ty'

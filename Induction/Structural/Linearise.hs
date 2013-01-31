@@ -31,10 +31,10 @@ strStyle = Style
     }
 
 -- | Linearises an Obligation, with a `Style`.
-linPart :: forall c v t . Style c v t -> IndPart c v t -> Doc
+linPart :: forall c v t . Style c v t -> Obligation c v t -> Doc
 linPart Style{..} p = case p of
-    IndPart sks []   concl -> linForall sks <+> linPred concl
-    IndPart sks hyps concl -> hang (linForall sks) 4 $
+    Obligation sks []   concl -> linForall sks <+> linPred concl
+    Obligation sks hyps concl -> hang (linForall sks) 4 $
         cat $ parList $
             punctuate (fluff ampersand) (map linHyp hyps) ++
             [space <> darrow <+> linPred concl]

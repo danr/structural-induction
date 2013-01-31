@@ -48,7 +48,7 @@ testStrInd vars coords = putStr
     $ map ( (++ ".")
           . render
           . linPart strStyle
-          . unV (\x i -> x ++ show i))
+          . unTagged (\x i -> x ++ show i))
     $ structuralInduction testEnv vars coords
 
 -- Various tests --------------------------------------------------------------

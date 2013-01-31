@@ -25,12 +25,12 @@ import Walk
 import Util
 
 -- | Structural Induction Instatiator
-type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [IndPartV Con' String Ty']
+type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [ObligationTagged Con' String Ty']
 
 -- | Do induction on a test case
 ind :: SII -> TestCase -> [IndP]
 ind sii (TestCase types coords) =
-    map (unV (\ x i -> x ++ show i)) $ sii testEnv' args coords
+    map (unTagged (\ x i -> x ++ show i)) $ sii testEnv' args coords
   where
     args = zip vars types
 
