@@ -1,5 +1,5 @@
 -- | An unsound induction principle, still around to test the testsuite against it
-{-# OPTIONS_GHC -fno-warn-orphan-instances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE
       ParallelListComp,
       PatternGuards,

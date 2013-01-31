@@ -38,26 +38,31 @@ data Repr a where
     -- ^ Should this contain more information?
   deriving Typeable
 
+-- The more number of units, the more boring this type is to test
 data URepr
-    = UUnit | UNat | UPInt | UBool
-    | UList URepr | UMaybe URepr
-    | UTupTy URepr URepr
-    | UTyVar
+    = UUnit () () ()
+    | UNat
+    | UPInt
+    | UBool () ()
+    | UList URepr
+    | UMaybe URepr ()
+    | UTupTy URepr URepr ()
+    | UTyVar () () ()
   deriving Typeable
 
 deriveEnumerable ''URepr
 
 toTy :: URepr -> Ty'
 toTy u = case u of
-    UUnit      -> Si Unit
-    UNat       -> Si Nat
-    UPInt      -> Si PInt
-    UBool      -> Si Bool
-    UList a    | Si a' <- toTy a -> Si (List a')
-    UMaybe a   | Si a' <- toTy a -> Si (Maybe a')
-    UTupTy a b | Si a' <- toTy a
-               , Si b' <- toTy b -> Si (TupTy a' b')
-    UTyVar     -> Si TyVar
+    UUnit{}      -> Si Unit
+    UNat         -> Si Nat
+    UPInt        -> Si PInt
+    UBool{}      -> Si Bool
+    UList a      | Si a' <- toTy a -> Si (List a')
+    UMaybe a _   | Si a' <- toTy a -> Si (Maybe a')
+    UTupTy a b _ | Si a' <- toTy a
+                 , Si b' <- toTy b -> Si (TupTy a' b')
+    UTyVar{}     -> Si TyVar
 
 enumTy' :: Enumerate Ty'
 enumTy' = fmap toTy enumerate

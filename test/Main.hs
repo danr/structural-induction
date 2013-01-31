@@ -101,22 +101,22 @@ makeTestCases tests = concat <$>
         let tys = indexWith enumTy's ix
             all_coordss = concat [ coordss (length tys - 1) d | d <- [0..4] ]
         coordss' <- head <$> sample' (shuffle all_coordss)
-        let css = nub . sortBy (comparing length) . sort . take 20 $ coordss'
+        let css = nub . sortBy (comparing length) . sort . take 10 $ coordss'
         return $ map (TestCase tys) css
     )
 
 main :: IO ()
 main = do
     let tests =
+            -- [("structuralInductionUnsound",structuralInductionUnsound)] ++
             [("subtermInductionQ",subtermInductionQ)
             ,("subtermInduction",subtermInduction)
             ,("caseAnalysis",caseAnalysis)
             ]
-            -- [("structuralInductionUnsound",structuralInductionUnsound)]
     oks <- forM tests $ \ (name_sii,sii) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
-        testcases <- makeTestCases 500
+        testcases <- makeTestCases 96
         let num_tests = length testcases
 
         ok_feat <- forM (zip testcases ([0..] :: [Integer])) $
