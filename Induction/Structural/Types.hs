@@ -98,7 +98,6 @@ data Arg t
     = Rec t
     | NonRec t
     | Exp t [t]
-  deriving (Eq,Ord,Show)
 
 -- | Type environment
 --
