@@ -23,7 +23,7 @@ import Safe
 
 -- | Find the type of a variable using the index in a type environment
 mfindVNote :: String -> Tagged a -> [(Tagged a,t)] -> t
-mfindVNote note (_,xi) = snd . headNote note . filter (\ ((_,yi),_) -> xi == yi)
+mfindVNote note u = snd . headNote note . filter (\ (v,_) -> tag u == tag v)
 
 -- We annotate constructors in the terms with the types of the arguments they
 -- have to easily be able to calculate subterms
@@ -76,9 +76,9 @@ inductionTm env (qs0,tm0) = go tm0
   where
     go :: TaggedTerm (C c t) v -> Fresh [QuantTerm c v t]
     go tm = case tm of
-        Var x@(_,x_idx) -> do
+        Var x@(_ :~ x_idx) -> do
             let ty = headNote "inductionTm: unbound variable!"
-                     [ t | ((_,idx),t) <- qs0, x_idx == idx ]
+                     [ t | (_ :~ idx,t) <- qs0, x_idx == idx ]
             fromMaybe [([(x,ty)],tm)] <$> inst env x ty
         Con c tms -> goTms (Con c) tms
         Fun f tms -> goTms (Fun f) tms
@@ -180,8 +180,8 @@ addHypothesesQ ip = do -- Obligation qs hyps tms
         -- tm is from a hypothesis, e from the conclusion.
         -- If e is a variable, tm should be the same, and we requantify over it
         addQ tm e = case e of
-            Var x@(_,xi) -> case tm of
-                Var (_,yi)
+            Var x@(_ :~ xi) -> case tm of
+                Var (_ :~ yi)
                     | xi == yi -> do
                         let t = mfindVNote msg_unbound x qs
                         xt'@(x',_) <- refreshTypedTagged x t

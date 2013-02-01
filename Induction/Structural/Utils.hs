@@ -32,7 +32,7 @@ runFresh (Fresh m) = evalState m 0
 
 -- | Creating a fresh variable
 newFresh :: v -> Fresh (Tagged v)
-newFresh v = Fresh $ state $ \ s -> ((v,s),s+1)
+newFresh v = Fresh $ state $ \ s -> (v :~ s,s+1)
 
 -- | Create a fresh variable that has a type
 newTyped :: v -> t -> Fresh (Tagged v,t)
@@ -40,7 +40,7 @@ newTyped v t = flip (,) t <$> newFresh v
 
 -- | Refresh variable
 refreshTagged :: Tagged v -> Fresh (Tagged v)
-refreshTagged (v,_) = newFresh v
+refreshTagged (v :~ _) = newFresh v
 
 -- | Refresh a variable that has a type
 refreshTypedTagged :: Tagged v -> t -> Fresh (Tagged v,t)

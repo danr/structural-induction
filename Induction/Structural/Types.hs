@@ -12,14 +12,20 @@ module Induction.Structural.Types
     -- ** Arguments
       Arg(..),
     -- * Tagged (fresh) variables
-      Tagged,
+      Tagged(..), tag,
     -- ** Removing tagged variables
-      unTag, unTagM
+      unTag, unTagM, unTagMapM
     ) where
 
 import Control.Monad.Identity
+import Control.Monad.State
 
 import Induction.Structural.Auxiliary ((.:))
+
+import Data.Function (on)
+
+import Data.Map (Map)
+import qualified Data.Map as M
 
 -- | Terms
 --
@@ -108,32 +114,62 @@ data Arg t
 type TyEnv c t = t -> Maybe [(c,[Arg t])]
 
 -- | Cheap way of introducing fresh variables
-type Tagged v = (v,Integer)
+data Tagged v = v :~ Integer
+
+tag :: Tagged v -> Integer
+tag (v :~ t) = t
+
+instance Eq (Tagged v) where
+    (==) = (==) `on` tag
+
+instance Ord (Tagged v) where
+    compare = compare `on` tag
 
 -- | Obligations with tagged variables (see `Tagged` and `unTag`)
 type TaggedObligation c v t = Obligation c (Tagged v) t
 
 -- | Removing tagged (fresh) variables, in a monad
-unTagM :: Monad m => (v -> Integer -> m v') -> TaggedObligation c v t -> m (Obligation c v' t)
-unTagM f (Obligation skolem hyps concl)
-    = Obligation <$> unQuant skolem
-              <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
-              <*> mapM unTm concl
+--
+-- The remove function is exectued at every occurence of a tagged variable.
+--
+-- This is useful if you want to sync it with your own name supply monad.
+unTagM :: Monad m => (Tagged v -> m v') -> [TaggedObligation c v t] -> m [Obligation c v' t]
+unTagM f = mapM $ \ (Obligation skolem hyps concl) ->
+    Obligation <$> unQuant skolem
+               <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
+               <*> mapM unTm concl
   where
     (<$>) = liftM
     (<*>) = ap
 
-    f' = uncurry f
-
-    unQuant = mapM (\(v,t) -> (,) <$> f' v <*> return t)
+    unQuant = mapM (\(v,t) -> (,) <$> f v <*> return t)
 
     unTm tm = case tm of
-        Var x     -> Var <$> f' x
+        Var x     -> Var <$> f x
         Con c tms -> Con c <$> mapM unTm tms
-        Fun x tms -> Fun <$> f' x <*> mapM unTm tms
+        Fun x tms -> Fun <$> f x <*> mapM unTm tms
+-- This function could be tested for being the identity on (,)
 
 -- | Removing tagged (fresh) variables
-unTag :: (v -> Integer -> v') -> TaggedObligation c v t -> Obligation c v' t
-unTag f = runIdentity . unTagM (return .: f)
+unTag :: (Tagged v -> v') -> [TaggedObligation c v t] -> [Obligation c v' t]
+unTag f = runIdentity . unTagM (return . f)
 
--- This function could be tested for being the identity on (,)
+-- | Remove tagged variables in a monad.
+--
+-- The remove function is exectued only once for each tagged variable,
+-- and a `Map` of renamings is returned.
+--
+-- This is useful if you want to sync it with your own name supply monad.
+unTagMapM :: Monad m => (Tagged v -> m v') -> [TaggedObligation c v t]
+         -> m ([Obligation c v' t],Map (Tagged v) v')
+unTagMapM f = flip runStateT M.empty . unTagM f'
+  where
+    f' tv = do
+        m <- get
+        case M.lookup tv m of
+            Just v' -> return v'
+            Nothing -> do
+                v' <- lift (f tv)
+                modify (M.insert tv v')
+                return v'
+

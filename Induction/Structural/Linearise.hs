@@ -5,7 +5,9 @@ module Induction.Structural.Linearise
     -- * Linearising (pretty-printing) obligations
       linObligation,
       Style(..),
-      strStyle
+      strStyle,
+    -- ** Convenience re-export
+      render
     ) where
 
 import Induction.Structural.Types
@@ -73,3 +75,4 @@ fluff d = space <> d <> space
 
 darrow :: Doc
 darrow = text "=>"
+
