@@ -20,8 +20,6 @@ module Induction.Structural.Types
 import Control.Monad.Identity
 import Control.Monad.State
 
-import Induction.Structural.Auxiliary ((.:))
-
 import Data.Function (on)
 
 import Data.Map (Map)
@@ -116,7 +114,7 @@ type TyEnv c t = t -> Maybe [(c,[Arg t])]
 data Tagged v = v :~ Integer
 
 tag :: Tagged v -> Integer
-tag (v :~ t) = t
+tag (_ :~ t) = t
 
 instance Eq (Tagged v) where
     (==) = (==) `on` tag

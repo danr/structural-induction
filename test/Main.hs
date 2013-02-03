@@ -31,7 +31,7 @@ type SII = TyEnv Con' Ty' -> [(String,Ty')] -> [Int] -> [TaggedObligation Con' S
 -- | Do induction on a test case
 ind :: SII -> TestCase -> [Oblig]
 ind sii (TestCase types coords) =
-    map (unTag (\ x i -> x ++ show i)) $ sii testEnv' args coords
+    unTag (\ (x :~ i) -> x ++ show i) $ sii testEnv' args coords
   where
     args = zip vars types
 
