@@ -113,6 +113,7 @@ type TyEnv c t = t -> Maybe [(c,[Arg t])]
 -- | Cheap way of introducing fresh variables
 data Tagged v = v :~ Integer
 
+-- | The Integer tag
 tag :: Tagged v -> Integer
 tag (_ :~ t) = t
 
