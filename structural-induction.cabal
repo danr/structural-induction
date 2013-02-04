@@ -10,11 +10,12 @@ bug-reports:        http://www.github.com/danr/structural-induction/issues
 build-type:         Simple
 cabal-version:      >= 1.8
 tested-with:        GHC == 7.4.1, GHC == 7.6.1
-synopsis:           Instantiates structural induction schemas for algebraic data types
+synopsis:           Instantiate structural induction schemas for algebraic data types
+description:        See documentation for Induction.Structural
 
 source-repository head
-    type: git
-    location: git://github.com/danr/structural-induction.git
+  type: git
+  location: git://github.com/danr/structural-induction.git
 
 flag Werror
   default: False
