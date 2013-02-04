@@ -1,7 +1,6 @@
 {-# LANGUAGE GADTs, ConstraintKinds, ExplicitForAll, PatternGuards #-}
 module Env where
 
-import Text.PrettyPrint (text)
 import Test.QuickCheck
 import Control.Applicative
 

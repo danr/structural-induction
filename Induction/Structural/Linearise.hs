@@ -9,7 +9,8 @@ module Induction.Structural.Linearise
       Style(..),
       strStyle,
     -- ** Convenience re-export
-      render
+      render,
+      text
     ) where
 
 import Induction.Structural.Types
