@@ -1,43 +1,41 @@
 module Example where
 
-import Text.PrettyPrint (render)
-
 import Induction.Structural
-import Induction.Structural.Linearise
 
 -- | A small test envirenment of Ordinals, Naturals, Integers,
 --   Lists, Trees and Expressions.
 testEnv :: TyEnv String String
-testEnv "Ord" = Just [("zero",[])
-                     ,("succ",[Rec "Nat"])
-                     ,("lim",[Exp "Nat -> Ord" ["Nat"]])
-                     ]
-testEnv "Nat" = Just [("zero",[])
-                     ,("succ",[Rec "Nat"])
-                     ]
-testEnv "Int" = Just [("pos",[NonRec "Nat"])
-                     ,("neg",[NonRec "Nat"])
-                     ]
-testEnv list@('L':'i':'s':'t':' ':a) =
-    Just [("nil",[])
-         ,("cons",[NonRec a,Rec list])
-         ]
-testEnv tree@('T':'r':'e':'e':' ':a) =
-    Just [("leaf",[NonRec a])
-         ,("fork",[Rec tree,Rec tree])
-         ]
-testEnv tree@('T':'r':'e':'e':'\'':' ':a) =
-    Just [("empty",[])
-         ,("branch",[Rec tree,NonRec a,Rec tree])
-         ]
-testEnv expr@('E':'x':'p':'r':' ':v) =
-    Just [("var",[NonRec v])
-         ,("lit",[NonRec "Int"])
-         ,("add",[Rec expr,Rec expr])
-         ,("mul",[Rec expr,Rec expr])
-         ,("neg",[Rec expr,Rec expr])
-         ]
-testEnv xs = Nothing
+testEnv t = case t of
+    "Ord" -> Just [("zero",[])
+                  ,("succ",[Rec "Ord"])
+                  ,("lim",[Exp "Nat -> Ord" ["Nat"]])
+                  ]
+    "Nat" -> Just [("zero",[])
+                  ,("succ",[Rec "Nat"])
+                  ]
+    "Int" -> Just [("pos",[NonRec "Nat"])
+                  ,("neg",[NonRec "Nat"])
+                  ]
+    _ | ("List ",a) <- splitAt 5 t ->
+            Just [("nil",[])
+                 ,("cons",[NonRec a,Rec t])
+                 ]
+      | ("Tree ",a) <- splitAt 5 t ->
+            Just [("leaf",[NonRec a])
+                 ,("fork",[Rec t,Rec t])
+                 ]
+      | ("Tree' ",a) <- splitAt 6 t ->
+            Just [("empty",[])
+                 ,("branch",[Rec t,NonRec a,Rec t])
+                 ]
+      | ("Expr ",v) <- splitAt 5 t ->
+            Just [("var",[NonRec v])
+                 ,("lit",[NonRec "Int"])
+                 ,("add",[Rec t,Rec t])
+                 ,("mul",[Rec t,Rec t])
+                 ,("neg",[Rec t,Rec t])
+                 ]
+    _ -> Nothing
 
 -- | Specify the type of every variable, then on which coordinates of
 --   P to do induction on. This function then takes care of the

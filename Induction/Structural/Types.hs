@@ -87,16 +87,12 @@ data Obligation c v t = Obligation
 type Hypothesis c v t = ([(v,t)],Predicate c v)
 
 
--- | An argument to a constructor can be recursive or non-recursive.
+-- | An argument to a constructor can be recursive (`Rec`) or non-recursive
+-- (`NonRec`).  Induction hypotheses will be asserted for `Rec` arguments.
 --
 -- For instance, when doing induction on @[a]@, then @(:)@ has two arguments,
--- @NonRec a@ and @Rec [a]@.
---
--- If doing induction on @[Nat]@, then @(:)@ has @NonRec Nat@ and @Rec [Nat]@
---
--- Induction hypotheses will be asserted for `Rec` arguments.
---
--- So `Rec` signals that there should be emitted an induction hypothesis here.
+-- @NonRec a@ and @Rec [a]@. On the other hand, if doing induction on @[Nat]@,
+-- then @(:)@ has @NonRec Nat@ and @Rec [Nat]@.
 --
 -- Data types can also be exponential. Consider
 --
@@ -105,9 +101,9 @@ type Hypothesis c v t = ([(v,t)],Predicate c v)
 -- Here, the @Lim@ constructor is exponential. If we describe types and
 -- constructors with strings, the constructors for this data type is:
 --
--- >[("Zero",[])
--- >,("Succ",[Rec "Ord"])
--- >,("Lim",[Exp ("Nat -> Ord") ["Nat"])
+-- >[ ("Zero",[])
+-- >, ("Succ",[Rec "Ord"])
+-- >, ("Lim",[Exp ("Nat -> Ord") ["Nat"])
 -- >]
 --
 -- The first argument to `Exp` is the type of the function, and the second
