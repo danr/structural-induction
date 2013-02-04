@@ -109,13 +109,13 @@ main :: IO ()
 main = do
     let tests =
             -- [("structuralInductionUnsound",structuralInductionUnsound)] ++
-            [("subtermInduction",subtermInduction)
-            ,("caseAnalysis",caseAnalysis)
+            [("subtermInduction",subtermInduction,96)
+            ,("caseAnalysis",caseAnalysis,15)
             ]
-    oks <- forM tests $ \ (name_sii,sii) -> do
+    oks <- forM tests $ \ (name_sii,sii,test_depth) -> do
         putStrLn $ "== " ++ name_sii ++ " =="
 
-        testcases <- makeTestCases 96
+        testcases <- makeTestCases test_depth
         let num_tests = length testcases
 
         ok_feat <- forM (zip testcases ([0..] :: [Integer])) $
