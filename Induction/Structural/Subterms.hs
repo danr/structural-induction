@@ -129,9 +129,8 @@ removeArg = go where
         Con (c,_) tms -> Con c (map go tms)
         Fun f     tms -> Fun f (map go tms)
 
--- | Does case analysis on a list of typed variables. No hypotheses.
---
--- `subtermInduction` is eactly this, but we add the subterms as hypotheses.
+-- | Does case analysis on a list of typed variables.  This function is equal
+-- to removing all the hypotheses from `subtermInduction`.
 caseAnalysis :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
 caseAnalysis env args = removeArgs . runFresh . noHyps env args
 
@@ -159,6 +158,8 @@ hasVar (Con _ as) = any hasVar as
 -- | Adds hypotheses to an Obligation.
 --
 -- Important to drop 1, otherwise we get the conclusion as a hypothesis!
+--
+-- Hypotheses that only contain constructors (no variables) are removed.
 addHypotheses :: Ord c => TaggedObligation (C c t) v t -> TaggedObligation (C c t) v t
 addHypotheses (Obligation qs _ tms) = Obligation qs hyps tms
   where

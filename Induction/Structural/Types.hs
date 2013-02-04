@@ -64,7 +64,7 @@ type Predicate c v = [Term c v]
 --
 -- /forall (z : t3) . P(htm3,htm4)./
 --
--- /! P(tm1,tm2)./
+-- /~ P(tm1,tm2)./
 --
 data Obligation c v t = Obligation
     { implicit   :: [(v,t)]
@@ -125,10 +125,11 @@ data Arg t
 -- type variables. For these, return `Nothing`.
 type TyEnv c t = t -> Maybe [(c,[Arg t])]
 
--- | Cheap way of introducing fresh variables
+-- | Cheap way of introducing fresh variables. The `Eq` and `Ord` instances
+-- only uses the `Integer` tag.
 data Tagged v = v :~ Integer
 
--- | The Integer tag
+-- | The `Integer` tag
 tag :: Tagged v -> Integer
 tag (_ :~ t) = t
 
@@ -159,7 +160,6 @@ unTagM f = mapM $ \ (Obligation skolem hyps concl) ->
         Var x     -> Var <$> f x
         Con c tms -> Con c <$> mapM unTm tms
         Fun x tms -> Fun <$> f x <*> mapM unTm tms
--- This function could be tested for being the identity on (,)
 
 -- | Removing tagged (fresh) variables
 unTag :: (Tagged v -> v') -> [TaggedObligation c v t] -> [Obligation c v' t]

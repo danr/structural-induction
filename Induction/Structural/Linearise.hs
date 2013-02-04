@@ -37,7 +37,8 @@ strStyle = Style
 linObligations :: Style c v t -> [Obligation c v t] -> Doc
 linObligations s = vcat . map ((<> dot) . linObligation s)
 
--- | Linearises an `Obligation` using a given `Style`.
+-- | Linearises an `Obligation` using a given `Style`. The output format is
+-- inspired by TPTP, but with typed quantifiers.
 linObligation :: Style c v t -> Obligation c v t -> Doc
 linObligation s@Style{..} x = case x of
     Obligation sks []   concl -> linForall sks <+> linPred concl
@@ -89,3 +90,4 @@ darrow = text "=>"
 
 dot :: Doc
 dot = char '.'
+
