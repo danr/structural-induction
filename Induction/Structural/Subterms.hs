@@ -3,7 +3,6 @@
 module Induction.Structural.Subterms
     (
     -- * Induction with subterms as hypotheses
-      subtermInductionQ,
       subtermInduction,
     -- * Case analysis (no induction hypotheses)
       caseAnalysis
@@ -15,7 +14,7 @@ import Control.Monad.State
 
 import Data.Maybe
 
-import Induction.Structural.Auxiliary (concatMapM)
+import Induction.Structural.Auxiliary (concatMapM,nubSortedOn)
 import Induction.Structural.Types
 import Induction.Structural.Utils
 
@@ -117,10 +116,14 @@ makeObligations qtms = [ Obligation qs [] tms | (qs,tms) <- qtms ]
 -- | Removes the argument type information from the constructors
 removeArgs :: [Obligation (C c t) v t] -> [Obligation c v t]
 removeArgs parts =
-    [ Obligation skolem [ (qs,map go hyp) | (qs,hyp) <- hyps ] (map go concl)
+    [ Obligation skolem [ (qs,map removeArg hyp) | (qs,hyp) <- hyps ]
+                        (map removeArg concl)
     | Obligation skolem hyps concl <- parts
     ]
-  where
+
+-- | Removes the argument type information from the constructors in one Term
+removeArg :: Term (C c t) v -> Term c v
+removeArg = go where
     go tm = case tm of
         Var x         -> Var x
         Con (c,_) tms -> Con c (map go tms)
@@ -128,7 +131,7 @@ removeArgs parts =
 
 -- | Does case analysis on a list of typed variables. No hypotheses.
 --
--- subtermInduction is eactly this, but we add the subterms as hypotheses.
+-- `subtermInduction` is eactly this, but we add the subterms as hypotheses.
 caseAnalysis :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
 caseAnalysis env args = removeArgs . runFresh . noHyps env args
 
@@ -150,17 +153,13 @@ subterms (Con c@(_,as) tms) = direct ++ indirect
 -- | Adds hypotheses to an Obligation.
 --
 -- Important to drop 1, otherwise we get the conclusion as a hypothesis!
-addHypotheses :: Obligation (C c t) v t -> Obligation (C c t) v t
+addHypotheses :: Ord c => TaggedObligation (C c t) v t -> TaggedObligation (C c t) v t
 addHypotheses (Obligation qs _ tms) = Obligation qs hyps tms
   where
     -- The empty lists denotes that we are not quantifying over any new
     -- variables in the hypotheses.
-    hyps = [ ([],h) | h <- drop 1 (mapM subterms tms) ]
-
--- | Subterm induction
-subtermInduction :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
-subtermInduction env args =
-    removeArgs . map addHypotheses . runFresh . noHyps env args
+    hyps = nubSortedOn (map removeArg . snd)
+                       [ ([],h) | h <- drop 1 (mapM subterms tms) ]
 
 -- | Adds hypotheses to an Obligation, requantifying over naked variables
 --
@@ -168,7 +167,7 @@ subtermInduction env args =
 --      forall x y . (forall y'.P(x,y')) -> P (K x,y)
 --
 -- Important to drop 1, otherwise we get the conclusion as a hypothesis!
-addHypothesesQ :: TaggedObligation (C c t) v t -> Fresh (TaggedObligation (C c t) v t)
+addHypothesesQ :: Ord c => TaggedObligation (C c t) v t -> Fresh (TaggedObligation (C c t) v t)
 addHypothesesQ ip = do -- Obligation qs hyps tms
 
     let Obligation qs hyps conc = addHypotheses ip
@@ -193,8 +192,9 @@ addHypothesesQ ip = do -- Obligation qs hyps tms
 
     return (Obligation qs (map (first concat) hyps') conc)
 
--- | Subterm induction
-subtermInductionQ :: TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
-subtermInductionQ env args =
+-- | Subterm induction: the induction hypotheses will contain the proper
+-- subterms of the conclusion.
+subtermInduction :: Ord c => TyEnv c t -> [(v,t)] -> [Int] -> [TaggedObligation c v t]
+subtermInduction env args =
     removeArgs . runFresh . (mapM addHypothesesQ <=< noHyps env args)
 

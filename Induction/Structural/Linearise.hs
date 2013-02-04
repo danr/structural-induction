@@ -2,8 +2,10 @@
 {-# LANGUAGE RecordWildCards #-}
 module Induction.Structural.Linearise
     (
-    -- * Linearising (pretty-printing) obligations
+    -- * Linearising (pretty-printing) obligations and terms
+      linObligations,
       linObligation,
+      linTerm,
       Style(..),
       strStyle,
     -- ** Convenience re-export
@@ -30,31 +32,39 @@ strStyle = Style
     , lint = text
     }
 
--- | Linearises an `Obligation` in a certain `Style`.
+-- | Linearises a list of `Obligation`, using a given `Style`.
+linObligations :: Style c v t -> [Obligation c v t] -> Doc
+linObligations s = vcat . map ((<> dot) . linObligation s)
+
+-- | Linearises an `Obligation` using a given `Style`.
 linObligation :: Style c v t -> Obligation c v t -> Doc
-linObligation Style{..} p = case p of
+linObligation s@Style{..} x = case x of
     Obligation sks []   concl -> linForall sks <+> linPred concl
     Obligation sks hyps concl -> hang (linForall sks) 4 $
         cat $ parList $
             punctuate (fluff ampersand) (map linHyp hyps) ++
             [space <> darrow <+> linPred concl]
   where
-    linTerm tm = case tm of
-        Var v    -> linv v
-        Con c [] -> linc c
-        Con c ts -> linc c <> parens (csv (map linTerm ts))
-        Fun v ts -> linv v <> parens (csv (map linTerm ts))
-
     linTypedVar v t = linv v <+> colon <+> lint t
 
     linForall [] = empty
     linForall qs =
         bang <+> brackets (csv (map (uncurry linTypedVar) qs)) <+> colon
 
-    linPred xs = char 'P' <> parens (csv (map linTerm xs))
+    linPred xs = char 'P' <> parens (csv (map (linTerm s) xs))
 
     linHyp ([],hyp) = linPred hyp
     linHyp (qs,hyp) = parens (linForall qs <+> linPred hyp)
+
+linTerm :: Style c v t -> Term c v -> Doc
+linTerm Style{..} = go
+  where
+    go tm = case tm of
+        Var v    -> linv v
+        Con c [] -> linc c
+        Con c ts -> linc c <> parens (csv (map go ts))
+        Fun v ts -> linv v <> parens (csv (map go ts))
+
 
 csv :: [Doc] -> Doc
 csv = hcat . punctuate comma
@@ -76,3 +86,5 @@ fluff d = space <> d <> space
 darrow :: Doc
 darrow = text "=>"
 
+dot :: Doc
+dot = char '.'

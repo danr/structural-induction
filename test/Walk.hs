@@ -51,7 +51,8 @@ makeTracer args parts = go parts
                     argss' <- mapM (construct (concat vms)) hyps'
                     forks <- mapM (`makeTracer` parts) argss'
                     return (Fork args forks)
-            | otherwise -> mk_error $ "Unequal lengths (conc=" ++ show conc ++ ")"
+            | otherwise -> mk_error $ "Unequal lengths (conc=" ++
+                intercalate "," (map (render . linTerm style) conc) ++ ")"
         _ -> mk_error "No case"
       where
         mk_error msg = error $

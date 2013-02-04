@@ -43,13 +43,11 @@ testEnv xs = Nothing
 --   P to do induction on. This function then takes care of the
 --   plumbing and prints the results.
 testStrInd :: [(String,String)] -> [Int] -> IO ()
-testStrInd vars coords = putStr
-    $ unlines
-    $ map ( (++ ".")
-          . render
-          . linPart strStyle
-          . unTagged (\x i -> x ++ show i))
-    $ structuralInduction testEnv vars coords
+testStrInd vars coords = putStrLn
+    $ render
+    $ linObligations strStyle
+    $ unTag (\(x :~ i) -> x ++ show i)
+    $ subtermInduction testEnv vars coords
 
 -- Various tests --------------------------------------------------------------
 

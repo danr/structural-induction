@@ -123,7 +123,8 @@ match v tm0 = case tm0 of
 -- | Show induction schema
 showOblig :: [Oblig] -> String
 showOblig = unlines . map ((++ ".") . render . linObligation style)
-  where
-    style :: Style Con' String Ty'
-    style = Style (text . show) text (text . show)
+
+-- | The style for printing
+style :: Style Con' String Ty'
+style = Style (text . show) text (text . show)
 
