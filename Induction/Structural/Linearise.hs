@@ -56,9 +56,9 @@ linObligation s@Style{..} x = case x of
     linHyp ([],hyp) = linPred hyp
     linHyp (qs,hyp) = parens (linForall qs <+> linPred hyp)
 
+-- | Linearises a `Term` using a given `Style`.
 linTerm :: Style c v t -> Term c v -> Doc
-linTerm Style{..} = go
-  where
+linTerm Style{..} = go where
     go tm = case tm of
         Var v    -> linv v
         Con c [] -> linc c
