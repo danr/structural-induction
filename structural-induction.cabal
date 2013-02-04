@@ -37,7 +37,7 @@ library
     Induction.Structural.Linearise
 
   build-depends:
-    base,
+    base                      >= 4 && < 5,
     mtl,
     containers,
     pretty,
