@@ -150,6 +150,12 @@ subterms (Con c@(_,as) tms) = direct ++ indirect
     -- Well-typed subterms of the arguments to the constructor
     indirect = concat [ subterms tm | (Rec _,tm) <- zip as tms ]
 
+-- | Does this term contain a variable somewhere?
+hasVar :: Term c v -> Bool
+hasVar Var{} = True
+hasVar Fun{} = True
+hasVar (Con _ as) = any hasVar as
+
 -- | Adds hypotheses to an Obligation.
 --
 -- Important to drop 1, otherwise we get the conclusion as a hypothesis!
@@ -159,7 +165,10 @@ addHypotheses (Obligation qs _ tms) = Obligation qs hyps tms
     -- The empty lists denotes that we are not quantifying over any new
     -- variables in the hypotheses.
     hyps = nubSortedOn (map removeArg . snd)
-                       [ ([],h) | h <- drop 1 (mapM subterms tms) ]
+                       [ ([],h)
+                       | h <- drop 1 (mapM subterms tms)
+                       , any hasVar h
+                       ]
 
 -- | Adds hypotheses to an Obligation, requantifying over naked variables
 --
