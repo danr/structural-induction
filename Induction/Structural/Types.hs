@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell #-}
 -- | Types
 module Induction.Structural.Types
     (
@@ -17,10 +18,15 @@ module Induction.Structural.Types
       unTag, unTagM, unTagMapM
     ) where
 
+import Data.Generics.Genifunctors
+
 import Control.Monad.Identity
 import Control.Monad.State
+import Control.Applicative
 
 import Data.Function (on)
+
+import Data.Traversable (traverse)
 
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -142,24 +148,15 @@ instance Ord (Tagged v) where
 -- | Obligations with tagged variables (see `Tagged` and `unTag`)
 type TaggedObligation c v t = Obligation c (Tagged v) t
 
+-- | Tri-traverse of Obligation
+trObligation :: Applicative f => (c -> f c') -> (v -> f v') -> (t -> f t') -> Obligation c v t -> f (Obligation c' v' t')
+trObligation = $(genTraverse ''Obligation)
+
 -- | Removing tagged (fresh) variables in a monad.
 -- The remove function is exectued at /every occurence/ of a tagged variable.
 -- This is useful if you want to sync it with your own name supply monad.
-unTagM :: Monad m => (Tagged v -> m v') -> [TaggedObligation c v t] -> m [Obligation c v' t]
-unTagM f = mapM $ \ (Obligation skolem hyps concl) ->
-    Obligation <$> unQuant skolem
-               <*> mapM (\(qs,hyp) -> (,) <$> unQuant qs <*> mapM unTm hyp) hyps
-               <*> mapM unTm concl
-  where
-    (<$>) = liftM
-    (<*>) = ap
-
-    unQuant = mapM (\(v,t) -> (,) <$> f v <*> return t)
-
-    unTm tm = case tm of
-        Var x     -> Var <$> f x
-        Con c tms -> Con c <$> mapM unTm tms
-        Fun x tms -> Fun <$> f x <*> mapM unTm tms
+unTagM :: Applicative m => (Tagged v -> m v') -> [TaggedObligation c v t] -> m [Obligation c v' t]
+unTagM f = traverse (trObligation pure f pure)
 
 -- | Removing tagged (fresh) variables
 unTag :: (Tagged v -> v') -> [TaggedObligation c v t] -> [Obligation c v' t]
@@ -169,7 +166,7 @@ unTag f = runIdentity . unTagM (return . f)
 -- The remove function is exectued /only once/ for each tagged variable,
 -- and a `Map` of renamings is returned.
 -- This is useful if you want to sync it with your own name supply monad.
-unTagMapM :: Monad m => (Tagged v -> m v') -> [TaggedObligation c v t]
+unTagMapM :: (Functor m,Monad m) => (Tagged v -> m v') -> [TaggedObligation c v t]
          -> m ([Obligation c v' t],Map (Tagged v) v')
 unTagMapM f = flip runStateT M.empty . unTagM f'
   where
