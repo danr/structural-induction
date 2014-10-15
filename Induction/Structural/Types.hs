@@ -148,6 +148,8 @@ instance Ord (Tagged v) where
 -- | Obligations with tagged variables (see `Tagged` and `unTag`)
 type TaggedObligation c v t = Obligation c (Tagged v) t
 
+return []
+
 -- | Tri-traverse of Obligation
 trObligation :: Applicative f => (c -> f c') -> (v -> f v') -> (t -> f t') -> Obligation c v t -> f (Obligation c' v' t')
 trObligation = $(genTraverse ''Obligation)
