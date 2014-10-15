@@ -91,7 +91,7 @@ mkProp sii tc@(TestCase tys _) =
     forAllShrink (startFromTypes tys) (mapM shrinkRepr') $ \ start ->
         forAll (makeTracer start parts) $ \ trace ->
             case loop trace of
-                Just _  -> printTestCase (showOblig parts) False
+                Just _  -> counterexample (showOblig parts) False
                 Nothing -> property True
   where parts = ind sii tc
 

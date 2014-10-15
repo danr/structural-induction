@@ -6,7 +6,7 @@ module EnvTypes where
 import Nat
 
 import Data.Function (on)
-import Data.Typeable
+import Data.Typeable (Typeable)
 
 import Test.QuickCheck
 import Test.Feat
