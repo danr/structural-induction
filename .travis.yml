@@ -5,12 +5,15 @@ ghc:
     - 7.6
     - 7.8
 
-install:
+before_install:
     - cabal update
-    - cabal install cabal-install
-    - sudo apt-get -q -y install hlint libghc-src-exts-dev libghc-mtl-dev libghc-regex-posix-dev
-    - cabal clean
-    - cabal install -fWerror --enable-tests --force-reinstalls
+    - cabal install cabal-install Cabal
+    - cabal configure -fWerror --enable-tests
+    - cabal install -fWerror --enable-tests --only-dependencies
+    - cabal install hlint
+
+install:
+    - cabal install -fWerror --enable-tests
 
 script:
     - hlint Induction/ test/
