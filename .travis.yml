@@ -7,10 +7,12 @@ ghc:
 
 install:
     - sudo apt-get -q -y install hlint libghc-src-exts-dev libghc-mtl-dev libghc-regex-posix-dev
+    - cabal clean
     - cabal install -fWerror --enable-tests --force-reinstalls
 
 script:
-    - hlint Induction/ test/ && cabal test
+    - hlint Induction/ test/
+    - cabal test
 
 after_script:
     - cat dist/test/structural-induction-0.1-walk.log; true
