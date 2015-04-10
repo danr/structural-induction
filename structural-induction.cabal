@@ -22,7 +22,7 @@ flag Werror
   manual: True
 
 library
-  ghc-options:    -Wall
+  ghc-options:    -Wall -fno-warn-unused-imports
   if flag(Werror)
     ghc-options: -Werror
 
@@ -48,7 +48,7 @@ test-suite walk
   type:           exitcode-stdio-1.0
   main-is:        Main.hs
   hs-source-dirs: test
-  ghc-options:    -Wall
+  ghc-options:    -Wall -fno-warn-unused-imports
   if flag(Werror)
     ghc-options: -Werror
 
@@ -56,7 +56,7 @@ test-suite walk
     structural-induction,
     base,
     pretty,
-    QuickCheck                >= 2.4,
+    QuickCheck                >= 2.8,
     mtl                       >= 2.1.2,
     language-haskell-extract,
     testing-feat              >= 0.4,
