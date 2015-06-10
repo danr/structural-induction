@@ -1,3 +1,6 @@
+structural-induction 0.2.0.1 (released 2015-06-10)
+	* Add missing test suite files to extra-source-files.
+
 structural-induction 0.2 (released 2015-04-10)
 	* Support GHC 7.10
 
