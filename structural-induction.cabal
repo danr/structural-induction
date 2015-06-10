@@ -12,20 +12,14 @@ cabal-version:      >= 1.8
 tested-with:        GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.3, GHC == 7.10.1
 synopsis:           Instantiate structural induction schemas for algebraic data types
 description:        See documentation for Induction.Structural
-extra-source-files: changelog
+extra-source-files: changelog test/Env.hs test/EnvTypes.hs test/Walk.hs test/Util.hs test/Trace.hs test/Nat.hs
 
 source-repository head
   type: git
   location: git://github.com/danr/structural-induction.git
 
-flag Werror
-  default: False
-  manual: True
-
 library
   ghc-options:    -Wall -fno-warn-unused-imports
-  if flag(Werror)
-    ghc-options: -Werror
 
   exposed-modules:
     Induction.Structural,
@@ -50,8 +44,6 @@ test-suite walk
   main-is:        Main.hs
   hs-source-dirs: test
   ghc-options:    -Wall -fno-warn-unused-imports
-  if flag(Werror)
-    ghc-options: -Werror
 
   build-depends:
     structural-induction,
