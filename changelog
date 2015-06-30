@@ -1,3 +1,6 @@
+structural-induction 0.3 (released 2015-06-30)
+	* Add Functor instance for Term and Obligation.
+
 structural-induction 0.2.0.1 (released 2015-06-10)
 	* Add missing test suite files to extra-source-files.
 

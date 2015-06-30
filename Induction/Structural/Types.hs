@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell, FlexibleContexts, DeriveFunctor #-}
 -- | Types
 module Induction.Structural.Types
     (
@@ -37,7 +37,7 @@ data Term c v
     | Con c [Term c v]
     | Fun v [Term c v]
     -- ^ Induction on exponential data types yield assumptions with functions
-  deriving (Eq,Ord)
+  deriving (Eq,Ord,Functor)
 
 -- Typed variables are represented as (v,t)
 
@@ -80,6 +80,7 @@ data Obligation c v t = Obligation
     , conclusion :: Predicate c v
     -- ^ The induction conclusion
     }
+    deriving (Functor)
 
 -- | Quantifier lists are represented as tuples of variables and their type.
 --
